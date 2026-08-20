@@ -139,9 +139,10 @@ chores/maintenance), so their due date is computed on the fly with `computeNextO
 anchored on the most recent actual `meter_readings` row (or the schedule's `anchorDate` if there
 isn't one yet).
 
-Dashboard item cards link to their section's list page (`/bills`, `/tasks`, `/maintenance`,
-`/utilities`), not a per-item detail route — none exist yet, and the PRD doesn't call for one in
-MVP scope.
+Dashboard item cards link to their section's list page (`/bills`, `/tasks`, `/maintenance`) or,
+for utilities, the specific `/utilities/[id]` detail page — bills/chores/maintenance don't have
+per-item detail routes yet (the PRD doesn't call for one in MVP scope), utilities does because
+MAD-92 needed one for reading history anyway.
 
 Mobile vs. desktop section order (PRD: desktop is Today/Needs Attention/Upcoming/Overview/
 Recent Activity; mobile prioritizes overdue first) is done with Tailwind `order-*` per
@@ -149,6 +150,38 @@ breakpoint on one shared DOM tree, not two separate layouts — see the comment 
 Household Overview and Recent Activity are `hidden md:block` (mobile doesn't get them per the
 PRD). Verified the reordering classes are correct via DOM inspection, same caveat as MAD-89: this
 sandbox can't actually render a narrow viewport to screenshot it.
+
+## Utilities and meter readings
+
+Establishes the pattern later CRUD features (bills, chores, maintenance) should follow —
+Server Actions (`"use server"`) returning `{ success: true } | { success: false; error }`
+rather than throwing, called directly from a client component via `useTransition` (not
+`useActionState` + a `useEffect` watching for success): closing a dialog or resetting a form on
+success needs to happen as a state update, and doing that inside a `useEffect` trips the
+`react-hooks/set-state-in-effect` lint rule. Calling the action directly inside
+`startTransition(async () => { ... })` gives the same pending/result handling from a genuine
+event callback instead.
+
+**Validate date strings at the server boundary, not just via the native date input.** Found
+this the hard way: browser-automation testing (typing "08/15/2026" including literal slashes
+into an `<input type="date">`) produced a mis-entered value that reached the server as
+"152026-08-07" — a 6-digit year — and the action inserted it into Postgres with zero
+validation, since it only checked the field was non-empty. `isValidDateOnly()`
+(`src/lib/schedule/is-valid-date-only.ts`) now guards every date string an action receives
+before it touches the database; use it (via the `readRequiredDate` helper pattern in
+`utilities/actions.ts`) for any future date input, not just `readRequiredString`.
+
+Reading reminders are deliberately restricted to `"monthly"` or `"custom"` in this feature's
+UI (`READING_SCHEDULE_FREQUENCIES` in `actions.ts`) even though `schedules.frequency` supports
+more — the other frequencies (daily/weekly/yearly/every_x_months) are for chores/maintenance,
+per MAD-92's acceptance criteria.
+
+Consumption (`src/lib/utilities/consumption.ts`) is just the delta between a reading and the
+next-older one for that utility — returns `null` (displayed as "—") when there's no prior
+reading or the delta is negative (meter reset/rollover isn't detected or corrected in MVP).
+
+Photo attachments aren't wired up — the reading form shows "Photo attachments aren't available
+yet" instead of a non-functional file input. Real upload support is MAD-96 (Vercel Blob).
 
 ## Tracking
 

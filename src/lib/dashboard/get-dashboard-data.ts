@@ -45,11 +45,12 @@ export type DashboardData = {
 };
 
 const UPCOMING_WINDOW_DAYS = 14;
-const HREF_BY_KIND: Record<DashboardItemKind, Route> = {
+// Utility items link to their specific /utilities/[id] page instead — computed
+// per-item below, since (unlike these three) that route actually exists.
+const HREF_BY_KIND: Record<Exclude<DashboardItemKind, "utility">, Route> = {
   bill: "/bills",
   chore: "/tasks",
   maintenance: "/maintenance",
-  utility: "/utilities",
 };
 
 function bucketOf(dueDate: DateOnly, today: DateOnly, windowEnd: DateOnly): keyof DashboardBuckets | null {
@@ -175,7 +176,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         kind: "utility",
         title: `${utility.type} reading`,
         dueDate: nextDue,
-        href: HREF_BY_KIND.utility,
+        href: `/utilities/${utility.id}`,
       });
     }
   }
