@@ -44,7 +44,8 @@ this file is a summary, not the source of truth.
 
 ## Shipping changes
 
-Use the `ship` skill (`.claude/skills/ship/`) to commit, push, open a PR, and merge — it is
-invoked manually (`/ship`), never automatically. It currently does no local checks; local
-checks, a unit test suite, and a CI/CD pipeline are planned additions (see the skill file for
-current status).
+Use the `deploy` skill (`.claude/skills/deploy/`) to commit, push, open a PR, and merge — it
+is invoked manually (`/deploy`), never automatically. Despite the name it does not deploy to
+any hosting environment yet, only handles the git/PR workflow. It currently does no local
+checks; local checks, a unit test suite, and a CI/CD pipeline are planned additions (see the
+skill file for current status).
