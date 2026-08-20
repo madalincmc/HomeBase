@@ -7,9 +7,9 @@ home responsibilities.
 
 ## Status
 
-Early development — project scaffolding in progress. No application code yet.
+Early development — Next.js app scaffolded, no features built yet.
 
-## Planned stack
+## Stack
 
 - [Next.js](https://nextjs.org/) (App Router) + React + TypeScript
 - [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) + [Lucide](https://lucide.dev/)
@@ -36,4 +36,11 @@ under team `MAD`, project `HomeBase`.
 
 ## Getting started
 
-Not yet scaffolded — instructions will be added once the Next.js application is set up.
+```bash
+npm install
+cp .env.example .env.local   # no variables required yet
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). `npm run build` produces a production
+build; `npm run lint` runs ESLint.
