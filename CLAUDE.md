@@ -303,6 +303,69 @@ dimensions are unpredictable; not worth configuring `remotePatterns` for a house
 photo thumbnails. Validation (JPEG/PNG/WEBP/HEIC/PDF, 10 MB max) is enforced server-side in
 `uploadAttachment`, not just via the `<input accept>` hint, which is trivially bypassable.
 
+## Notifications and the reminder center
+
+`src/lib/dashboard/get-due-items.ts` (`getDueItems()`) is a MAD-98 extraction of the
+overdue/due-today/upcoming computation that used to live entirely inside `get-dashboard-data.ts`
+(MAD-91) — it's the single source of truth for "what's due" across bills, chores, maintenance,
+and utilities, now shared by both the dashboard and the notification sync below. The dashboard
+just buckets the flat `DueItem[]` it returns; nothing about its own behavior changed.
+
+**No cron/scheduled-task infra exists** (same constraint already noted for bills' display status
+and utilities' next-reading-due), so `notifications` rows aren't generated on a schedule — they're
+reconciled inline, in `src/lib/notifications/sync-notifications.ts` (`syncNotifications()`),
+every time the notification center is opened. It diffs the current `getDueItems()` result against
+existing `notifications` rows keyed by `(relatedEntityType, relatedEntityId)`: items no longer due
+(paid/completed/skipped/pushed past the 14-day window) get their notification row deleted; new
+items get inserted unread; items whose title/due date changed get updated in place.
+
+**`read` is deliberately not reset when a notification's content is updated** — e.g. a chore
+sitting in "upcoming" that the user already saw and read, then rolls into "due today" and
+"overdue" as days pass with no edit, stays marked read; only an actual content change (the due
+date itself was edited) or a brand-new entity entering the due window makes something unread
+again. Bucket (overdue/due-today/upcoming) is never stored — like `getBillDisplayStatus()`, it's
+recomputed fresh from `dueAt` vs. today every time `getNotifications()` reads the table, so a day
+rolling forward alone can't touch a row or its read state. This was a deliberate scope call, not
+an oversight: real urgency-escalation re-notification would need tracking each row's previously-
+computed bucket, which isn't worth a schema change for MVP — the dashboard's own Needs Attention
+section is already the authoritative overdue nag; the notification center is a supplementary
+inbox.
+
+`notifications.category` mirrors `DueItem["kind"]` 1:1 (`bill`/`chore`/`maintenance`/`utility`).
+The fifth enum value, `"general"`, is reserved for some future non-schedule-derived notification
+and is deliberately excluded from every query `syncNotifications()` runs (both the diff and the
+stale-delete) — so a hypothetical future `"general"` row can never be created or deleted by this
+sync path.
+
+**The bell (`src/components/shell/notification-bell.tsx`) fetches its own data client-side via a
+Server Action (`getNotificationCenterData()` in `src/lib/notifications/actions.ts`), not through
+server-rendered props.** `AppShell` (which mounts the bell) is rendered by the root layout, which
+wraps every route — if the bell were a Server Component doing a direct DB read there, it would
+force the *entire app* dynamic (the same class of bug as MAD-91's build-time `getOrCreateHousehold()`
+insert, just one layer up), and `/history`, `/more`, and `/settings` would lose the static
+optimization they currently have. Fetching via a Server Action sidesteps this entirely: actions
+always execute at request time regardless of the calling route's rendering mode. The bell re-fetches
+on mount and whenever the popover opens — there's no live-push, so it can go stale between opens on a
+long-lived tab; acceptable at MVP's no-realtime-infra scope.
+
+**Found and fixed a real bug during verification**: the bell originally imported
+`formatDateOnlyLabel` from the `@/lib/schedule` barrel (`src/lib/schedule/index.ts`). That barrel
+also re-exports `task-occurrences.ts`, which imports `@/db` (the `pg` driver) — bundling that into
+a Client Component pulls Node-only internals (`fs`, `net`, `tls`, `dns`, `util/types`) into the
+browser bundle and fails the production build outright (`next build` caught it immediately; dev
+mode didn't). Fixed by importing straight from `@/lib/schedule/format` instead of the barrel.
+**Any future Client Component needing something from `@/lib/schedule` should import the specific
+module, not the barrel** — every other current usage of the barrel is from Server Components/
+Server Actions, where this isn't an issue.
+
+Browser notifications use the plain `Notification` Web API directly — no service worker or push
+subscription (that's PWA territory, MAD-101's job, not this one). Permission is only ever
+requested from an explicit "Enable" click in the bell popover, never automatically. Firing is
+tab-scoped: each fired notification's id is remembered in `localStorage` so remounts/refetches
+within the same browser don't re-fire ones already shown; closing the tab and no push
+infrastructure means a due reminder won't reach the user while HomeBase isn't open, which is a
+known MVP limitation, not a bug.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
