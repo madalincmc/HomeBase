@@ -52,6 +52,28 @@ yourself if/when a form needs validation.
 **Breakpoint convention:** mobile layout below `md` (768px, Tailwind's default), desktop layout
 at `md` and above — matches the PRD's explicit desktop-dashboard vs. mobile-action-layout split.
 
+## Database
+
+Postgres is provisioned via the Vercel Marketplace (Neon), attached to the linked Vercel
+project `homebase` (team `madalincmcs-projects`) — not a manually-managed instance. Get local
+env vars with `vercel env pull .env.local` rather than filling in `.env.example` by hand.
+
+Neon gives two connection strings: **pooled** (`DATABASE_URL`) for the app's runtime queries,
+and **direct/unpooled** (`DATABASE_URL_UNPOOLED`) for schema migrations — the pooled connection
+(PgBouncer, transaction mode) doesn't support the session-level operations `drizzle-kit` uses.
+`drizzle.config.ts` is already wired to the unpooled URL; don't point it at the pooled one.
+
+Driver is `node-postgres` (`pg`) via `drizzle-orm/node-postgres`, per Vercel's Fluid Compute
+recommendation — not `@neondatabase/serverless`. `src/db/index.ts` wraps pool creation with
+`attachDatabasePool` from `@vercel/functions` so idle connections drain properly on scale-down,
+and reuses the pool across dev-mode HMR reloads via a `global` singleton.
+
+Schema lives in `src/db/schema.ts`; only a `households` table exists so far (uuid PK, name,
+timestamps) — MAD-87 adds the rest of the MVP entities, all of which should reference
+`households.id`. Migration workflow: `npm run db:generate` (writes SQL to `drizzle/`) then
+`npm run db:migrate` (applies it) — both scripts load `.env.local` via `dotenv-cli` since
+`drizzle-kit` doesn't auto-load it the way Next.js does.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
