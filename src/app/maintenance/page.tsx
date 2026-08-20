@@ -1,14 +1,14 @@
 import { PageHeader } from "@/components/shell/page-header";
 
-export default function Home() {
+export default function MaintenancePage() {
   return (
     <>
       <PageHeader
-        title="Home"
-        description="Today, overdue, and upcoming household items will show up here."
+        title="Maintenance"
+        description="Recurring home and appliance maintenance will show up here."
       />
       <div className="p-4 text-sm text-muted-foreground md:p-6">
-        The dashboard is not built yet.
+        Maintenance isn&apos;t built yet.
       </div>
     </>
   );

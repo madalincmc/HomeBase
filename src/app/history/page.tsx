@@ -1,14 +1,14 @@
 import { PageHeader } from "@/components/shell/page-header";
 
-export default function Home() {
+export default function HistoryPage() {
   return (
     <>
       <PageHeader
-        title="Home"
-        description="Today, overdue, and upcoming household items will show up here."
+        title="History"
+        description="A chronological timeline of household activity will show up here."
       />
       <div className="p-4 text-sm text-muted-foreground md:p-6">
-        The dashboard is not built yet.
+        History isn&apos;t built yet.
       </div>
     </>
   );
