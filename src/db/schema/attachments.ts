@@ -1,0 +1,41 @@
+import { pgTable, uuid, text, integer, timestamp, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { households } from "./households";
+import { meterReadings } from "./utilities";
+import { bills } from "./bills";
+import { maintenanceItems } from "./maintenance";
+
+// `url` is populated once Vercel Blob upload lands (MAD-96) — this table
+// only defines where a file record can attach to. Exactly one parent FK is
+// set, enforced the same way as task_occurrences (see that file's comment).
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    meterReadingId: uuid("meter_reading_id").references(() => meterReadings.id, {
+      onDelete: "cascade",
+    }),
+    billId: uuid("bill_id").references(() => bills.id, { onDelete: "cascade" }),
+    maintenanceItemId: uuid("maintenance_item_id").references(() => maintenanceItems.id, {
+      onDelete: "cascade",
+    }),
+    url: text("url").notNull(),
+    filename: text("filename"),
+    contentType: text("content_type"),
+    sizeBytes: integer("size_bytes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "attachments_exactly_one_parent",
+      sql`(
+        (case when ${table.meterReadingId} is not null then 1 else 0 end) +
+        (case when ${table.billId} is not null then 1 else 0 end) +
+        (case when ${table.maintenanceItemId} is not null then 1 else 0 end)
+      ) = 1`
+    ),
+  ]
+);
