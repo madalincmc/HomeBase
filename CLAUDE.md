@@ -130,9 +130,10 @@ this file is a summary, not the source of truth.
 
 Use the `deploy` skill (`.claude/skills/deploy/`) to commit, push, open a PR, and merge — it
 is invoked manually (`/deploy`), never automatically. Despite the name it does not deploy to
-any hosting environment yet, only handles the git/PR workflow. It currently does no local
-checks; local checks, a unit test suite, and a CI/CD pipeline are planned additions (see the
-skill file for current status).
+any hosting environment yet, only handles the git/PR workflow. It runs lint, type-check, tests,
+and a production build as a local gate before anything ships — a failure stops it before any
+git state changes. A CI/CD pipeline (the same checks running on GitHub) is still a planned
+addition (see the skill file for current status).
 
 <!-- BEGIN:nextjs-agent-rules -->
 
