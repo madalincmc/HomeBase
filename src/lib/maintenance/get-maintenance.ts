@@ -1,6 +1,6 @@
 import { eq, inArray, desc, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { maintenanceItems, rooms, taskOccurrences, schedules } from "@/db/schema";
+import { maintenanceItems, rooms, taskOccurrences, schedules, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
 export async function getMaintenanceItems() {
@@ -13,7 +13,11 @@ export async function getMaintenanceItems() {
     .where(eq(maintenanceItems.householdId, household.id));
 
   if (rows.length === 0) {
-    return { items: [], scheduleById: new Map<string, typeof schedules.$inferSelect>() };
+    return {
+      items: [],
+      scheduleById: new Map<string, typeof schedules.$inferSelect>(),
+      attachmentsByItem: new Map<string, (typeof attachments.$inferSelect)[]>(),
+    };
   }
 
   const itemIds = rows.map((r) => r.item.id);
@@ -36,6 +40,15 @@ export async function getMaintenanceItems() {
     scheduleIds.length > 0 ? await db.select().from(schedules).where(inArray(schedules.id, scheduleIds)) : [];
   const scheduleById = new Map(scheduleRows.map((s) => [s.id, s]));
 
+  const attachmentRows = await db.select().from(attachments).where(inArray(attachments.maintenanceItemId, itemIds));
+  const attachmentsByItem = new Map<string, typeof attachmentRows>();
+  for (const attachment of attachmentRows) {
+    if (!attachment.maintenanceItemId) continue;
+    const list = attachmentsByItem.get(attachment.maintenanceItemId) ?? [];
+    list.push(attachment);
+    attachmentsByItem.set(attachment.maintenanceItemId, list);
+  }
+
   const sorted = rows
     .map(({ item, roomName }) => ({
       item,
@@ -48,7 +61,7 @@ export async function getMaintenanceItems() {
       return aDate.localeCompare(bDate);
     });
 
-  return { items: sorted, scheduleById };
+  return { items: sorted, scheduleById, attachmentsByItem };
 }
 
 export async function getHouseholdRooms() {

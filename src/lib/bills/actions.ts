@@ -8,6 +8,9 @@ import { getOrCreateHousehold } from "@/lib/household";
 import { computeNextOccurrence, isValidDateOnly } from "@/lib/schedule";
 
 export type ActionResult = { success: true } | { success: false; error: string };
+// The caller (CreateBillDialog) needs the new row's id to attach a photo/
+// document to it in a follow-up call — see MAD-96.
+export type CreateBillResult = { success: true; billId: string } | { success: false; error: string };
 
 // Narrower than schedule_frequency, same reasoning as utilities' reading
 // reminders (MAD-92): daily/weekly don't make sense for a bill.
@@ -87,7 +90,10 @@ async function assertUtilityBelongsToHousehold(utilityId: string | null, househo
   if (!utility) throw new Error("Utility not found.");
 }
 
-export async function createBill(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+export async function createBill(
+  _prevState: CreateBillResult | null,
+  formData: FormData
+): Promise<CreateBillResult> {
   try {
     const household = await getOrCreateHousehold();
     const title = readRequiredString(formData, "title", "Title");
@@ -106,22 +112,25 @@ export async function createBill(_prevState: ActionResult | null, formData: Form
       scheduleId = schedule.id;
     }
 
-    await db.insert(bills).values({
-      householdId: household.id,
-      utilityId,
-      scheduleId,
-      title,
-      provider,
-      amount,
-      currency,
-      issueDate,
-      dueDate,
-      status: "upcoming",
-    });
+    const [bill] = await db
+      .insert(bills)
+      .values({
+        householdId: household.id,
+        utilityId,
+        scheduleId,
+        title,
+        provider,
+        amount,
+        currency,
+        issueDate,
+        dueDate,
+        status: "upcoming",
+      })
+      .returning();
 
     revalidatePath("/bills");
     revalidatePath("/");
-    return { success: true };
+    return { success: true, billId: bill.id };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : "Something went wrong." };
   }

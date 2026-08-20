@@ -3,6 +3,7 @@ import { CreateBillDialog } from "@/components/bills/create-bill-dialog";
 import { EditBillDialog } from "@/components/bills/edit-bill-dialog";
 import { MarkPaidDialog } from "@/components/bills/mark-paid-dialog";
 import { BillStatusBadge } from "@/components/bills/bill-status-badge";
+import { AttachmentList } from "@/components/attachments/attachment-list";
 import { getBills, getHouseholdUtilities } from "@/lib/bills/get-bills";
 import { getBillDisplayStatus } from "@/lib/bills/status";
 import { formatDateOnlyLabel, todayDateOnly } from "@/lib/schedule";
@@ -11,7 +12,10 @@ import { formatDateOnlyLabel, todayDateOnly } from "@/lib/schedule";
 export const dynamic = "force-dynamic";
 
 export default async function BillsPage() {
-  const [{ unpaid, paid, scheduleById }, utilities] = await Promise.all([getBills(), getHouseholdUtilities()]);
+  const [{ unpaid, paid, scheduleById, attachmentsByBill }, utilities] = await Promise.all([
+    getBills(),
+    getHouseholdUtilities(),
+  ]);
   const today = todayDateOnly();
 
   return (
@@ -46,7 +50,12 @@ export default async function BillsPage() {
                   <BillStatusBadge status={getBillDisplayStatus(bill, today)} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <EditBillDialog bill={bill} schedule={scheduleById.get(bill.scheduleId ?? "") ?? null} utilities={utilities} />
+                  <EditBillDialog
+                    bill={bill}
+                    schedule={scheduleById.get(bill.scheduleId ?? "") ?? null}
+                    utilities={utilities}
+                    attachments={attachmentsByBill.get(bill.id) ?? []}
+                  />
                   <MarkPaidDialog billId={bill.id} title={bill.title} />
                 </div>
               </div>
@@ -80,6 +89,14 @@ export default async function BillsPage() {
                   <span>Paid {bill.paidDate ? formatDateOnlyLabel(bill.paidDate) : "—"}</span>
                   <BillStatusBadge status="paid" />
                 </div>
+                {(attachmentsByBill.get(bill.id) ?? []).length > 0 && (
+                  <div className="md:w-48">
+                    <AttachmentList
+                      attachments={attachmentsByBill.get(bill.id) ?? []}
+                      revalidatePaths={["/bills", "/"]}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

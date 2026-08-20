@@ -1,6 +1,6 @@
 import { eq, asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { bills, utilities, schedules } from "@/db/schema";
+import { bills, utilities, schedules, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
 export async function getBills() {
@@ -24,7 +24,18 @@ export async function getBills() {
     scheduleIds.length > 0 ? await db.select().from(schedules).where(inArray(schedules.id, scheduleIds)) : [];
   const scheduleById = new Map(scheduleRows.map((s) => [s.id, s]));
 
-  return { unpaid, paid, scheduleById };
+  const billIds = rows.map((r) => r.bill.id);
+  const attachmentRows =
+    billIds.length > 0 ? await db.select().from(attachments).where(inArray(attachments.billId, billIds)) : [];
+  const attachmentsByBill = new Map<string, typeof attachmentRows>();
+  for (const attachment of attachmentRows) {
+    if (!attachment.billId) continue;
+    const list = attachmentsByBill.get(attachment.billId) ?? [];
+    list.push(attachment);
+    attachmentsByBill.set(attachment.billId, list);
+  }
+
+  return { unpaid, paid, scheduleById, attachmentsByBill };
 }
 
 export async function getHouseholdUtilities() {

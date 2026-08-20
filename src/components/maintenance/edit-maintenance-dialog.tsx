@@ -10,26 +10,33 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FieldError } from "@/components/ui/field";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { AttachmentList } from "@/components/attachments/attachment-list";
 import { updateMaintenanceItem } from "@/lib/maintenance/actions";
 import { MaintenanceFormFields, type MaintenanceFormRoomOption } from "./maintenance-form-fields";
-import type { maintenanceItems, schedules } from "@/db/schema";
+import type { maintenanceItems, schedules, attachments } from "@/db/schema";
 
 type MaintenanceItem = typeof maintenanceItems.$inferSelect;
 type Schedule = typeof schedules.$inferSelect;
+type Attachment = typeof attachments.$inferSelect;
 
 const RECURRING_FREQUENCIES = ["daily", "weekly", "monthly", "every_x_months", "yearly", "custom"] as const;
 
+// New photos attach at completion time (CompleteMaintenanceDialog), matching
+// the PRD's quick workflow — this dialog is for viewing/removing existing
+// ones, not adding more.
 export function EditMaintenanceDialog({
   item,
   schedule,
   rooms,
   dueDate,
+  attachments,
 }: {
   item: MaintenanceItem;
   schedule: Schedule | null;
   rooms: MaintenanceFormRoomOption[];
   dueDate: string;
+  attachments: Attachment[];
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +93,12 @@ export function EditMaintenanceDialog({
               scheduleInterval: schedule?.interval ?? null,
             }}
           />
+          {attachments.length > 0 && (
+            <Field>
+              <FieldLabel>Attachments</FieldLabel>
+              <AttachmentList attachments={attachments} revalidatePaths={["/maintenance", "/"]} />
+            </Field>
+          )}
           {error && <FieldError>{error}</FieldError>}
           <DialogFooter>
             <Button type="submit" disabled={pending}>

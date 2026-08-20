@@ -8,6 +8,11 @@ import { getOrCreateHousehold } from "@/lib/household";
 import { isValidDateOnly } from "@/lib/schedule";
 
 export type ActionResult = { success: true } | { success: false; error: string };
+// The caller (AddReadingForm) needs the new row's id to attach a photo to it
+// in a follow-up call — see MAD-96.
+export type AddMeterReadingResult =
+  | { success: true; readingId: string }
+  | { success: false; error: string };
 
 const UTILITY_TYPES = ["electricity", "gas", "water"] as const;
 // Narrower than the schema's full schedule_frequency enum — a reading
@@ -148,9 +153,9 @@ export async function updateUtility(
 
 export async function addMeterReading(
   utilityId: string,
-  _prevState: ActionResult | null,
+  _prevState: AddMeterReadingResult | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<AddMeterReadingResult> {
   try {
     const household = await getOrCreateHousehold();
     const [utility] = await db
@@ -166,7 +171,10 @@ export async function addMeterReading(
     const readingDate = readRequiredDate(formData, "readingDate", "Reading date");
     const notes = readOptionalString(formData, "notes");
 
-    await db.insert(meterReadings).values({ utilityId, value: valueRaw, readingDate, notes });
+    const [reading] = await db
+      .insert(meterReadings)
+      .values({ utilityId, value: valueRaw, readingDate, notes })
+      .returning();
     await db.insert(activities).values({
       householdId: household.id,
       type: "meter_reading",
@@ -176,7 +184,7 @@ export async function addMeterReading(
     revalidatePath(`/utilities/${utilityId}`);
     revalidatePath("/utilities");
     revalidatePath("/");
-    return { success: true };
+    return { success: true, readingId: reading.id };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : "Something went wrong." };
   }

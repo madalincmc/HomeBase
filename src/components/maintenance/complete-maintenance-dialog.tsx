@@ -14,12 +14,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
+import { AttachmentUploadField } from "@/components/attachments/attachment-upload-field";
 import { completeMaintenanceOccurrence } from "@/lib/maintenance/actions";
+import { uploadAttachment } from "@/lib/attachments/actions";
 
-// Cost/notes are optional per the PRD's quick workflow ("complete → record
-// optional cost/photo → next occurrence scheduled") — a dialog rather than
-// chores' one-tap button, since these fields are worth keeping.
-export function CompleteMaintenanceDialog({ occurrenceId, title }: { occurrenceId: string; title: string }) {
+// Cost/notes/photo are optional per the PRD's quick workflow ("complete →
+// record optional cost/photo → next occurrence scheduled") — a dialog
+// rather than chores' one-tap button, since these fields are worth keeping.
+// The photo attaches to the maintenance item itself (attachments.
+// maintenanceItemId), not the specific occurrence — see MAD-96 in CLAUDE.md.
+export function CompleteMaintenanceDialog({
+  occurrenceId,
+  itemId,
+  title,
+}: {
+  occurrenceId: string;
+  itemId: string;
+  title: string;
+}) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -27,12 +39,22 @@ export function CompleteMaintenanceDialog({ occurrenceId, title }: { occurrenceI
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await completeMaintenanceOccurrence(occurrenceId, null, formData);
-      if (result.success) {
-        setError(null);
-        setOpen(false);
-      } else {
+      if (!result.success) {
         setError(result.error);
+        return;
       }
+      const uploadResult = await uploadAttachment(
+        { maintenanceItemId: itemId },
+        ["/maintenance", "/"],
+        null,
+        formData
+      );
+      if (!uploadResult.success) {
+        setError(uploadResult.error);
+        return;
+      }
+      setError(null);
+      setOpen(false);
     });
   }
 
@@ -50,9 +72,7 @@ export function CompleteMaintenanceDialog({ occurrenceId, title }: { occurrenceI
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Complete &quot;{title}&quot;</DialogTitle>
-          <DialogDescription>
-            Cost and notes are optional. Photo attachments aren&apos;t available yet.
-          </DialogDescription>
+          <DialogDescription>Cost, notes, and photo are all optional.</DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="flex flex-col gap-4">
           <FieldGroup>
@@ -64,6 +84,7 @@ export function CompleteMaintenanceDialog({ occurrenceId, title }: { occurrenceI
               <FieldLabel htmlFor="notes">Notes</FieldLabel>
               <Textarea id="notes" name="notes" rows={2} />
             </Field>
+            <AttachmentUploadField label="Photo" />
           </FieldGroup>
           {error && <FieldError>{error}</FieldError>}
           <DialogFooter>

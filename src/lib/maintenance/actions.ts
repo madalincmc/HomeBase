@@ -2,8 +2,9 @@
 
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { del } from "@vercel/blob";
 import { db } from "@/db";
-import { maintenanceItems, schedules, rooms, taskOccurrences, activities } from "@/db/schema";
+import { maintenanceItems, schedules, rooms, taskOccurrences, activities, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { isValidDateOnly, completeTaskOccurrence, skipTaskOccurrence, todayDateOnly } from "@/lib/schedule";
 
@@ -223,7 +224,16 @@ export async function deleteMaintenanceItem(itemId: string): Promise<ActionResul
       .where(and(eq(maintenanceItems.id, itemId), eq(maintenanceItems.householdId, household.id)));
     if (!existing) throw new Error("Maintenance item not found.");
 
-    // task_occurrences cascade-delete via the FK (MAD-87 schema).
+    // task_occurrences and attachments both cascade-delete via their FK
+    // (MAD-87 schema) — but that only removes the DB rows. The actual Blob
+    // files behind any attachments would otherwise leak forever, since
+    // nothing else ever calls del() on them. Clean those up first.
+    const itemAttachments = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.maintenanceItemId, itemId));
+    await Promise.all(itemAttachments.map((a) => del(a.url)));
+
     await db.delete(maintenanceItems).where(eq(maintenanceItems.id, itemId));
 
     revalidatePath("/maintenance");

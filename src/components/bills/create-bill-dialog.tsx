@@ -11,7 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FieldError } from "@/components/ui/field";
+import { AttachmentUploadField } from "@/components/attachments/attachment-upload-field";
 import { createBill } from "@/lib/bills/actions";
+import { uploadAttachment } from "@/lib/attachments/actions";
 import { BillFormFields, type BillFormUtilityOption } from "./bill-form-fields";
 
 export function CreateBillDialog({ utilities }: { utilities: BillFormUtilityOption[] }) {
@@ -22,12 +24,25 @@ export function CreateBillDialog({ utilities }: { utilities: BillFormUtilityOpti
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await createBill(null, formData);
-      if (result.success) {
-        setError(null);
-        setOpen(false);
-      } else {
+      if (!result.success) {
         setError(result.error);
+        return;
       }
+      // Same FormData reused for the upload — createBill ignores "file",
+      // uploadAttachment only reads it. Upload failure doesn't undo the
+      // bill, which already saved successfully.
+      const uploadResult = await uploadAttachment(
+        { billId: result.billId },
+        ["/bills", "/"],
+        null,
+        formData
+      );
+      if (!uploadResult.success) {
+        setError(uploadResult.error);
+        return;
+      }
+      setError(null);
+      setOpen(false);
     });
   }
 
@@ -48,6 +63,7 @@ export function CreateBillDialog({ utilities }: { utilities: BillFormUtilityOpti
         </DialogHeader>
         <form action={handleSubmit} className="flex flex-col gap-4">
           <BillFormFields utilities={utilities} />
+          <AttachmentUploadField label="Bill photo/document" />
           {error && <FieldError>{error}</FieldError>}
           <DialogFooter>
             <Button type="submit" disabled={pending}>
