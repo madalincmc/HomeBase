@@ -238,6 +238,29 @@ show up anywhere.
 Delete requires confirmation (`DeleteChoreDialog`) since it's destructive and takes the chore's
 completion history with it (`task_occurrences` cascade-deletes via the FK from MAD-87).
 
+## Maintenance
+
+`maintenance_items.category` was **added in MAD-95**, not MAD-87 — the original schema missed
+it even though the PRD's acceptance criteria for this feature explicitly asks for a category
+distinct from room and related appliance. Free text, not an enum: there's no fixed category
+list defined anywhere (unlike `utilities.type`), so this doesn't guess at one (e.g. "HVAC",
+"Plumbing"). Migration `0002_blushing_masked_marvel.sql`.
+
+Otherwise this feature is structurally identical to chores (MAD-94) — same
+`completeTaskOccurrence`/`skipTaskOccurrence` engine reuse, same room-field-only-if-rooms-exist
+pattern, same due-date-moves-the-pending-occurrence behavior on edit, same cascade-on-delete —
+with two real differences:
+
+- **Complete is a dialog, not a one-tap button** (`CompleteMaintenanceDialog`), because the PRD's
+  quick workflow explicitly wants an optional actual cost and notes captured at completion time
+  (`task_occurrences.cost`/`.notes`, already supported by the MAD-90 engine's input type) —
+  distinct from `maintenanceItems.estimatedCost`, which is the item's planned/estimated cost and
+  never gets overwritten by what a specific completion actually cost.
+- **`maintenanceItems.lastCompletedAt` is maintained here**, not by the shared engine (chores
+  has no equivalent column) — set to `todayDateOnly()` whenever `completeMaintenanceOccurrence`
+  succeeds, which is *when the work was done*, not the occurrence's `scheduledFor` (*when it was
+  due*) — those can differ for a maintenance item completed late or early.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

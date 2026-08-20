@@ -15,6 +15,10 @@ export const maintenanceItems = pgTable("maintenance_items", {
   scheduleId: uuid("schedule_id").references(() => schedules.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   description: text("description"),
+  // Free text, not an enum — the PRD doesn't define a fixed category list
+  // (unlike utilities.type), so this stays flexible rather than guessing
+  // at one (e.g. "HVAC", "Plumbing").
+  category: text("category"),
   relatedAppliance: text("related_appliance"),
   priority: priorityEnum("priority").notNull().default("medium"),
   estimatedCost: numeric("estimated_cost", { precision: 12, scale: 2 }),
