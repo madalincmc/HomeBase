@@ -68,11 +68,31 @@ recommendation — not `@neondatabase/serverless`. `src/db/index.ts` wraps pool 
 `attachDatabasePool` from `@vercel/functions` so idle connections drain properly on scale-down,
 and reuses the pool across dev-mode HMR reloads via a `global` singleton.
 
-Schema lives in `src/db/schema.ts`; only a `households` table exists so far (uuid PK, name,
-timestamps) — MAD-87 adds the rest of the MVP entities, all of which should reference
-`households.id`. Migration workflow: `npm run db:generate` (writes SQL to `drizzle/`) then
-`npm run db:migrate` (applies it) — both scripts load `.env.local` via `dotenv-cli` since
-`drizzle-kit` doesn't auto-load it the way Next.js does.
+Schema lives in `src/db/schema/` (one file per domain, re-exported from `index.ts`), 12 tables:
+`households`, `rooms`, `schedules`, `utilities`, `meter_readings`, `bills`, `chores`,
+`maintenance_items`, `task_occurrences`, `attachments`, `notifications`, `activities`. Migration
+workflow: `npm run db:generate` (writes SQL to `drizzle/`) then `npm run db:migrate` (applies
+it) — both scripts load `.env.local` via `dotenv-cli` since `drizzle-kit` doesn't auto-load it
+the way Next.js does.
+
+**Recurrence:** `schedules` is one shared recurrence-rule table reused by `utilities` (reading
+reminders), `bills`, `chores`, and `maintenance_items`, each via a nullable `scheduleId`. It only
+stores the rule (frequency/interval/anchor date) — computing what's actually due next is MAD-90's
+job, not this schema's.
+
+**History:** `meter_readings` and `bills` preserve history simply by being append-only — a new
+row per reading or billing period, never overwritten. `chores` and `maintenance_items` are
+recurring *templates*, not instances, so their completion history lives in `task_occurrences`
+instead (one row per due/completed/skipped occurrence).
+
+**Two FK patterns for "belongs to one of several parents":** `task_occurrences`
+(chore/maintenance) and `attachments` (meter_reading/bill/maintenance_item) use **real nullable
+FK columns plus a CHECK constraint** enforcing exactly one is set — gives cascade delete and DB-
+enforced integrity. `notifications` and `activities` instead use an **unenforced**
+`relatedEntityType` (text) + `relatedEntityId` (uuid) pair with no FK at all, deliberately: they
+can point at any of several entity types without one column per type, and a log entry shouldn't
+vanish just because its source row was later deleted. Don't "fix" the second pattern into FKs —
+it's intentional, not an oversight.
 
 ## Tracking
 
