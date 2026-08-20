@@ -183,6 +183,33 @@ reading or the delta is negative (meter reset/rollover isn't detected or correct
 Photo attachments aren't wired up — the reading form shows "Photo attachments aren't available
 yet" instead of a non-functional file input. Real upload support is MAD-96 (Vercel Blob).
 
+## Bills and payment tracking
+
+`bills.status` is only ever written as `"upcoming"` (creation) or `"paid"` (mark paid) — the
+schema's `"due"`/`"overdue"` enum values exist but nothing writes them, same reasoning as
+utilities' reading reminders: they're time-derived and would go stale the moment a day passes
+with no write. `getBillDisplayStatus()` (`src/lib/bills/status.ts`) computes the displayed
+status from `dueDate` vs. today instead, matching how the dashboard (MAD-91) already treats
+bills. Don't try to "fix" this by writing due/overdue into the column — the display logic
+already handles it correctly, and a background job to keep a stored value in sync doesn't exist
+(no cron/scheduled-task infra yet).
+
+**Recurring bills generate their next instance when the current one is marked paid**, not on a
+schedule/cron — `markBillPaid` (`src/lib/bills/actions.ts`) computes the next due date via
+`computeNextOccurrence`, anchored on the bill that was just paid's `dueDate` (not the payment
+date), and inserts a new `bills` row if the schedule isn't `"custom"`. This mirrors
+`completeTaskOccurrence` (MAD-90) for chores/maintenance, adapted because bills don't have an
+occurrences table — each billing period is just its own row (see MAD-87's schema notes).
+
+Recurrence for bills is restricted to `monthly` / `every_x_months` / `yearly` / `custom` (no
+daily/weekly — doesn't make sense for a bill), and unlike utilities' reading reminders, there's
+no separate "anchor date" field: the bill's own `dueDate` **is** the anchor, since a bill
+naturally has one already.
+
+Mark-paid is a small dialog (`MarkPaidDialog`), not a single button, so the payment date is
+still genuinely editable — but it's pre-filled to today, so the common case is still just two
+taps. This is the "mobile-friendly mark-paid flow" the acceptance criteria asked for.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
