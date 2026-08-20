@@ -18,7 +18,10 @@ const PRIORITY_VARIANT = {
 } as const;
 
 export default async function MaintenancePage() {
-  const [{ items, scheduleById }, rooms] = await Promise.all([getMaintenanceItems(), getHouseholdRooms()]);
+  const [{ items, scheduleById, attachmentsByItem }, rooms] = await Promise.all([
+    getMaintenanceItems(),
+    getHouseholdRooms(),
+  ]);
 
   return (
     <>
@@ -57,7 +60,11 @@ export default async function MaintenancePage() {
                     Due {formatDateOnlyLabel(pendingOccurrence.scheduledFor)}
                   </span>
                   <SkipMaintenanceButton occurrenceId={pendingOccurrence.id} />
-                  <CompleteMaintenanceDialog occurrenceId={pendingOccurrence.id} title={item.title} />
+                  <CompleteMaintenanceDialog
+                    occurrenceId={pendingOccurrence.id}
+                    itemId={item.id}
+                    title={item.title}
+                  />
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">No occurrence scheduled</span>
@@ -69,6 +76,7 @@ export default async function MaintenancePage() {
                   schedule={item.scheduleId ? (scheduleById.get(item.scheduleId) ?? null) : null}
                   rooms={rooms}
                   dueDate={pendingOccurrence?.scheduledFor ?? item.nextDueDate ?? ""}
+                  attachments={attachmentsByItem.get(item.id) ?? []}
                 />
                 <DeleteMaintenanceDialog itemId={item.id} title={item.title} />
               </div>

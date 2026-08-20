@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shell/page-header";
 import { EditUtilityDialog } from "@/components/utilities/edit-utility-dialog";
 import { AddReadingForm } from "@/components/utilities/add-reading-form";
+import { AttachmentList } from "@/components/attachments/attachment-list";
 import { getUtilityDetail } from "@/lib/utilities/get-utility-detail";
 import { formatDateOnlyLabel } from "@/lib/schedule";
 
@@ -50,6 +51,7 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                     <th className="px-3 py-2 font-medium">Value</th>
                     <th className="px-3 py-2 font-medium">Consumption</th>
                     <th className="px-3 py-2 font-medium">Notes</th>
+                    <th className="px-3 py-2 font-medium">Photo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -65,6 +67,12 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                         {reading.consumption !== null ? `${reading.consumption} ${utility.unit}` : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{reading.notes ?? "—"}</td>
+                      <td className="min-w-40 px-3 py-2">
+                        <AttachmentList
+                          attachments={reading.attachments}
+                          revalidatePaths={[`/utilities/${utility.id}`]}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

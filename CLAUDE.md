@@ -261,6 +261,48 @@ with two real differences:
   succeeds, which is *when the work was done*, not the occurrence's `scheduledFor` (*when it was
   due*) — those can differ for a maintenance item completed late or early.
 
+## Attachments (Vercel Blob)
+
+Blob store `homebase` is provisioned via `vercel blob create-store` (public access — consistent
+with the rest of the MVP's no-auth posture) and connected to the `homebase` project, so
+`BLOB_READ_WRITE_TOKEN` is already live in Production/Preview/Development — nothing further to
+configure. `src/lib/attachments/actions.ts` (`uploadAttachment`/`deleteAttachment`) is the one
+shared module every feature's upload/remove UI calls into; don't reimplement Blob calls per
+feature.
+
+**Where each entity attaches a file matches the PRD's own workflow language, not a uniform
+"add a photo anywhere" pattern**: utilities attach at reading-creation time
+(`AddReadingForm`, MAD-92 already had the form), bills at bill-creation *or* edit time
+(`CreateBillDialog`/`EditBillDialog` — PRD: "photograph/enter bill"), maintenance at completion
+time only (`CompleteMaintenanceDialog` — PRD: "complete → record optional cost/photo"). The
+`attachments` table's FK is to the parent **entity** (`meterReadingId`/`billId`/
+`maintenanceItemId`), never to a `task_occurrences` row, so a maintenance photo taken "at
+completion" is really just attached to the item generally, not to that specific occurrence —
+this was a MAD-87 schema decision, not something MAD-96 could change.
+
+**Two-step client orchestration, not one atomic action**: each create/complete action was
+extended to return the new row's id on success (`AddMeterReadingResult`, `CreateBillResult`),
+and the calling dialog's `handleSubmit` calls `uploadAttachment` as a second step afterward,
+reusing the same `FormData` (the entity action ignores its `"file"` field; `uploadAttachment`
+only reads that one). If the upload step fails, the entity itself is **not** rolled back — it
+already saved. `uploadAttachment` treats "no file chosen" as a normal success no-op, not an
+error, since attachments are optional everywhere.
+
+**Found and fixed a real bug during verification, not caught by any local check**:
+`deleteMaintenanceItem` cascade-deletes its `attachments` rows via the FK, but a SQL cascade
+only removes the *row* — it never calls Blob's `del()`, so the actual file silently leaks
+forever. Confirmed this with `vercel blob list` after a cascade delete (the file was still
+there). Fixed by fetching and `del()`-ing the item's attachments before the DB delete. **If a
+delete action is ever added for utilities or bills, apply the same fix** — right now
+`deleteMaintenanceItem` is the only delete path that touches an entity with attachments, so it's
+the only one fixed; the single-attachment `deleteAttachment` action was already correct (it
+`del()`s before removing the row).
+
+Plain `<img>`, not `next/image`, for thumbnails (`AttachmentList`) — Blob URLs are external and
+dimensions are unpredictable; not worth configuring `remotePatterns` for a household app's
+photo thumbnails. Validation (JPEG/PNG/WEBP/HEIC/PDF, 10 MB max) is enforced server-side in
+`uploadAttachment`, not just via the `<input accept>` hint, which is trivially bypassable.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

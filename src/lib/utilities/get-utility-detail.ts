@@ -1,6 +1,6 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { utilities, schedules, meterReadings } from "@/db/schema";
+import { utilities, schedules, meterReadings, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { computeConsumption } from "./consumption";
 
@@ -22,6 +22,19 @@ export async function getUtilityDetail(utilityId: string) {
     .where(eq(meterReadings.utilityId, utilityId))
     .orderBy(desc(meterReadings.readingDate), desc(meterReadings.createdAt));
 
+  const readingIds = readings.map((r) => r.id);
+  const readingAttachments =
+    readingIds.length > 0
+      ? await db.select().from(attachments).where(inArray(attachments.meterReadingId, readingIds))
+      : [];
+  const attachmentsByReading = new Map<string, typeof readingAttachments>();
+  for (const attachment of readingAttachments) {
+    if (!attachment.meterReadingId) continue;
+    const list = attachmentsByReading.get(attachment.meterReadingId) ?? [];
+    list.push(attachment);
+    attachmentsByReading.set(attachment.meterReadingId, list);
+  }
+
   // readings is newest-first, so the "previous" reading for consumption is
   // the next one along in this same array, not index - 1.
   const readingsWithConsumption = readings.map((reading, index) => {
@@ -29,6 +42,7 @@ export async function getUtilityDetail(utilityId: string) {
     return {
       ...reading,
       consumption: previous ? computeConsumption(previous.value, reading.value) : null,
+      attachments: attachmentsByReading.get(reading.id) ?? [],
     };
   });
 
