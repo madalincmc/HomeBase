@@ -34,6 +34,24 @@ utility provider integrations, automatic bill retrieval, AI assistant, OCR, adva
 shopping list, inventory/warranty tracking, contractor management. These are staged into later
 phases — see Linear.
 
+## UI foundation
+
+shadcn/ui is set up with the Radix base (`radix-ui` package) and the "Nova" style/preset —
+**not** the newer experimental Base UI preset (`shadcn init`'s default when run with `-d`),
+which had a broken registry item (`select` importing a shadcn.com-demo-only path) at the time
+this was set up. Icon library is Lucide (`lucide-react`); fonts are Geist Sans/Mono via
+`next/font`. Component tokens (color, radius) live in `src/app/globals.css`; add new primitives
+with `npx shadcn@latest add <name>`.
+
+Available primitives: `button`, `card`, `badge`, `dialog`, `navigation-menu`, `input`,
+`textarea`, `label`, `separator`. Forms use `field` (`Field`, `FieldLabel`, `FieldDescription`,
+`FieldError`, `FieldGroup`, etc.) — this shadcn version replaced the old react-hook-form-bound
+`Form` component with these framework-agnostic primitives; wire them to `react-hook-form`
+yourself if/when a form needs validation.
+
+**Breakpoint convention:** mobile layout below `md` (768px, Tailwind's default), desktop layout
+at `md` and above — matches the PRD's explicit desktop-dashboard vs. mobile-action-layout split.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
