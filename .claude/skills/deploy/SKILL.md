@@ -1,13 +1,17 @@
 ---
-name: ship
-description: Commit the current changes, push a branch, open a PR, and merge it. Manual invocation only (/ship) — never runs automatically. Use when the user asks to ship, commit and push, or open/merge a PR for HomeBase.
+name: deploy
+description: Commit the current changes, push a branch, open a PR, and merge it. Manual invocation only (/deploy) — never runs automatically. Use when the user asks to deploy, ship, commit and push, or open/merge a PR for HomeBase.
 ---
 
-# Ship
+# Deploy
 
 Ships whatever is currently changed in the HomeBase repo: commit → push → PR → merge. This
-skill only runs when explicitly invoked (`/ship`) — never automatically on Stop or any other
+skill only runs when explicitly invoked (`/deploy`) — never automatically on Stop or any other
 event.
+
+Note: despite the name, this skill does not deploy the app to any hosting environment (e.g.
+Vercel) — it only handles the git/PR workflow. Actual deployment is tracked separately
+(MAD-88).
 
 **Current status: no gates.** This skill does not yet run linting, type-checking, tests, or
 CI. It ships whatever is in the working tree as-is. Local checks, a unit test suite, and a
