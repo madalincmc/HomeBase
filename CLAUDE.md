@@ -77,8 +77,32 @@ the way Next.js does.
 
 **Recurrence:** `schedules` is one shared recurrence-rule table reused by `utilities` (reading
 reminders), `bills`, `chores`, and `maintenance_items`, each via a nullable `scheduleId`. It only
-stores the rule (frequency/interval/anchor date) — computing what's actually due next is MAD-90's
-job, not this schema's.
+stores the rule (frequency/interval/anchor date) — computing what's actually due next lives in
+`src/lib/schedule/`, not the schema.
+
+`computeNextOccurrence` (`compute-next-occurrence.ts`) is a pure function operating on plain
+`YYYY-MM-DD` strings, never `Date` objects for the calendar math — Drizzle returns Postgres
+`date` columns as strings by default (only `timestamp` columns default to `Date`), and doing
+month/year arithmetic through `new Date(dateString)` risks off-by-one-day bugs across
+timezones. All arithmetic stays in UTC internally and clamps the day when a month is shorter
+(Jan 31 + 1 month → Feb 28/29, not Mar 3) or a target year isn't a leap year. `"custom"`
+frequency returns `null` — there's no formula, a person picks the next date by hand. Anchors on
+the *scheduled* date, not the completion date, so a bill due the 15th stays due the 15th
+regardless of when it was actually paid.
+
+`completeTaskOccurrence` / `skipTaskOccurrence` (`task-occurrences.ts`) are the only pieces that
+actually touch `task_occurrences` end to end: in one transaction, mark the occurrence
+completed/skipped, look up its parent chore/maintenance item's schedule, compute the next date,
+insert the next pending occurrence, and bump the parent's `nextDueDate`. A one-off task (no
+`scheduleId`) or a `"custom"` schedule just completes with no next occurrence created — that's
+expected, not a bug. This only covers chores/maintenance; bills and meter-reading reminders
+reuse `computeNextOccurrence` too, but generating their next row is each feature's own job
+(MAD-92/MAD-93), not this engine's.
+
+`compute-next-occurrence.test.ts` has permanent unit tests (Node's built-in `node:test`, run via
+`npm test`) — the first tests in the repo. Chose the built-in runner over installing
+vitest/jest since this module is pure/deterministic and didn't need more; revisit if a real
+framework becomes worth it once there's more to test.
 
 **History:** `meter_readings` and `bills` preserve history simply by being append-only — a new
 row per reading or billing period, never overwritten. `chores` and `maintenance_items` are
