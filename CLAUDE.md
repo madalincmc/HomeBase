@@ -210,6 +210,34 @@ Mark-paid is a small dialog (`MarkPaidDialog`), not a single button, so the paym
 still genuinely editable — but it's pre-filled to today, so the common case is still just two
 taps. This is the "mobile-friendly mark-paid flow" the acceptance criteria asked for.
 
+## Chores
+
+`completeChoreOccurrence` / `skipChoreOccurrence` (`src/lib/chores/actions.ts`) are thin
+Server Action wrappers around `completeTaskOccurrence` / `skipTaskOccurrence` — the MAD-90
+engine already did the actual work (mark the occurrence, compute and insert the next one in a
+transaction), so this feature only adds the `{ success, error? }` shape, `revalidatePath`,
+activity logging, and one cleanup step the engine doesn't do: if there's no next occurrence
+(one-off chore, or a `"custom"` schedule), `nextDueDate` on the chore gets explicitly cleared to
+`null` rather than left showing a stale date. Complete/skip are one-tap buttons, not dialogs —
+unlike bills' mark-paid, there's no field that genuinely needs to stay editable per completion.
+
+Unlike utilities/bills, chores allow the **full** recurrence range including `daily`/`weekly` —
+those make real sense for a chore ("water plants" daily, "take out trash" weekly) in a way they
+don't for a utility reading or a bill.
+
+The **room field only appears once at least one room exists** — same pattern as bills'
+utility-association field (MAD-93): conditionally rendered based on data availability rather
+than blocking on MAD-97 (rooms/areas) being built first. A fresh household won't show it until
+MAD-97 ships and someone creates a room; that's expected, not a bug.
+
+**Editing a chore's due date moves its current pending `task_occurrences` row**, not just the
+informational `chores.nextDueDate` column — the task list and dashboard both derive status from
+the occurrence, not that column, so an edit that only touched `nextDueDate` would silently not
+show up anywhere.
+
+Delete requires confirmation (`DeleteChoreDialog`) since it's destructive and takes the chore's
+completion history with it (`task_occurrences` cascade-deletes via the FK from MAD-87).
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
