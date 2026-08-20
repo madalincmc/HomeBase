@@ -118,6 +118,38 @@ can point at any of several entity types without one column per type, and a log 
 vanish just because its source row was later deleted. Don't "fix" the second pattern into FKs —
 it's intentional, not an oversight.
 
+## Dashboard
+
+`getOrCreateHousehold()` (`src/lib/household.ts`) is how every page gets "the" household —
+there's no onboarding flow yet (MAD-102), so the first request that needs a household creates
+one named "My Household" if none exists. Reuse this rather than querying `households` directly.
+
+`src/app/page.tsx` exports `export const dynamic = "force-dynamic"` — **don't remove this.**
+Without it, Next statically prerenders `/` at build time, which baked in a stale "today" and,
+worse, ran `getOrCreateHousehold()`'s insert as a build-time side effect (caught this the hard
+way: a real household row got created just from running `next build` locally). Any future page
+that reads live household data and doesn't already opt out of static rendering some other way
+needs the same treatment.
+
+`get-dashboard-data.ts` buckets bills (unpaid, by `dueDate`) and chore/maintenance
+`task_occurrences` (`status: "pending"`, by `scheduledFor`) into overdue/dueToday/upcoming by
+comparing against `todayDateOnly()` — not the stored `bills.status` enum, since nothing updates
+that automatically yet. Utilities have no stored "next reading due" column (unlike
+chores/maintenance), so their due date is computed on the fly with `computeNextOccurrence`,
+anchored on the most recent actual `meter_readings` row (or the schedule's `anchorDate` if there
+isn't one yet).
+
+Dashboard item cards link to their section's list page (`/bills`, `/tasks`, `/maintenance`,
+`/utilities`), not a per-item detail route — none exist yet, and the PRD doesn't call for one in
+MVP scope.
+
+Mobile vs. desktop section order (PRD: desktop is Today/Needs Attention/Upcoming/Overview/
+Recent Activity; mobile prioritizes overdue first) is done with Tailwind `order-*` per
+breakpoint on one shared DOM tree, not two separate layouts — see the comment in `page.tsx`.
+Household Overview and Recent Activity are `hidden md:block` (mobile doesn't get them per the
+PRD). Verified the reordering classes are correct via DOM inspection, same caveat as MAD-89: this
+sandbox can't actually render a narrow viewport to screenshot it.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
