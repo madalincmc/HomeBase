@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
-import { AttachmentUploadField } from "@/components/attachments/attachment-upload-field";
+import { ScanCaptureField, type ScanCaptureFieldHandle } from "@/components/attachments/scan-capture-field";
 import { addMeterReading } from "@/lib/utilities/actions";
 import { uploadAttachment } from "@/lib/attachments/actions";
-import { extractMeterReading } from "@/lib/utilities/extract-reading";
-import { cn } from "@/lib/utils";
+import { extractMeterReading, type ExtractedReading } from "@/lib/utilities/extract-reading";
 
 export function AddReadingForm({
   utilityId,
@@ -28,36 +27,16 @@ export function AddReadingForm({
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const valueInputRef = useRef<HTMLInputElement>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [scanConfidence, setScanConfidence] = useState<"high" | "medium" | "low" | null>(null);
-  const [scanning, startScanTransition] = useTransition();
+  const scanFieldRef = useRef<ScanCaptureFieldHandle>(null);
 
-  function handleScan() {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) {
-      setScanError("Choose a meter photo first.");
-      return;
+  function handleReadingScanned(data: ExtractedReading | null) {
+    // Single uncontrolled field — a direct imperative set is simpler than
+    // remounting the whole form the way BillFormFields does (MAD-103) for
+    // its many fields.
+    if (data?.value && valueInputRef.current) {
+      valueInputRef.current.value = data.value;
     }
-    const scanFormData = new FormData();
-    scanFormData.set("file", file);
-    startScanTransition(async () => {
-      const result = await extractMeterReading(null, scanFormData);
-      if (!result.success) {
-        setScanConfidence(null);
-        setScanError(result.error);
-        return;
-      }
-      setScanError(null);
-      setScanConfidence(result.data.confidence);
-      // Single uncontrolled field — a direct imperative set is simpler than
-      // remounting the whole form the way BillFormFields does (MAD-103) for
-      // its many fields.
-      if (result.data.value && valueInputRef.current) {
-        valueInputRef.current.value = result.data.value;
-      }
-    });
   }
 
   function handleSubmit(formData: FormData) {
@@ -82,9 +61,8 @@ export function AddReadingForm({
         return;
       }
       setError(null);
-      setScanError(null);
-      setScanConfidence(null);
       formRef.current?.reset();
+      scanFieldRef.current?.reset();
       onSuccess?.();
     });
   }
@@ -94,26 +72,20 @@ export function AddReadingForm({
   return (
     <form ref={formRef} action={handleSubmit} className="flex flex-col gap-4">
       <FieldGroup>
-        <AttachmentUploadField label="Meter photo" inputRef={fileInputRef} />
-        <div className="flex flex-col gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleScan}
-            disabled={scanning}
-            className="self-start"
-          >
-            {scanning ? "Scanning…" : "Scan with AI"}
-          </Button>
-          {scanError && <FieldError>{scanError}</FieldError>}
-          {scanConfidence && (
-            <p className={cn("text-xs", scanConfidence === "low" ? "text-destructive" : "text-muted-foreground")}>
-              AI-suggested ({scanConfidence} confidence) — confirm or edit the reading below before
-              saving.
-            </p>
-          )}
-        </div>
+        <ScanCaptureField<ExtractedReading>
+          ref={scanFieldRef}
+          label="Scan the meter"
+          hint="Tap to take a photo — we'll read the value automatically"
+          scanAction={(file) => {
+            const formData = new FormData();
+            formData.set("file", file);
+            return extractMeterReading(null, formData);
+          }}
+          onScanned={handleReadingScanned}
+          resultCaption={(confidence) =>
+            `AI-suggested (${confidence} confidence) — confirm or edit the reading below before saving.`
+          }
+        />
         <Field orientation="responsive">
           <FieldLabel htmlFor="value">Reading ({unit})</FieldLabel>
           <Input ref={valueInputRef} id="value" name="value" type="number" step="any" inputMode="decimal" required />
