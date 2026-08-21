@@ -8,8 +8,8 @@ import type { HouseholdCategory } from "@/lib/category";
 
 type ActivityType = (typeof activityTypeEnum.enumValues)[number];
 
-// Maps each of the 5 activity_type enum values (schema/enums.ts) onto the
-// same 4-category taxonomy the dashboard and notifications use. Two chore
+// Maps each of the 6 activity_type enum values (schema/enums.ts) onto the
+// same 5-category taxonomy the dashboard and notifications use. Two chore
 // events collapse into one category since "chore" is the granularity users
 // filter by, not "completed vs. skipped".
 const TYPES_BY_CATEGORY: Record<HouseholdCategory, ActivityType[]> = {
@@ -17,6 +17,7 @@ const TYPES_BY_CATEGORY: Record<HouseholdCategory, ActivityType[]> = {
   bill: ["bill_payment"],
   chore: ["chore_completed", "chore_skipped"],
   maintenance: ["maintenance_completed"],
+  repair: ["repair_resolved"],
 };
 
 const CATEGORY_BY_TYPE = Object.fromEntries(

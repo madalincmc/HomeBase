@@ -35,10 +35,17 @@ export const notificationCategoryEnum = pgEnum("notification_category", [
   "general",
 ]);
 
+// "repair_resolved" added in MAD-110 — unlike warranty (above), a resolved
+// repair genuinely is a completed user action worth logging, so it (and the
+// new "repair" HouseholdCategory it maps to) joins the activity/History
+// taxonomy rather than staying outside it.
 export const activityTypeEnum = pgEnum("activity_type", [
   "meter_reading",
   "bill_payment",
   "chore_completed",
   "chore_skipped",
   "maintenance_completed",
+  "repair_resolved",
 ]);
+
+export const repairStatusEnum = pgEnum("repair_status", ["open", "in_progress", "waiting", "resolved"]);

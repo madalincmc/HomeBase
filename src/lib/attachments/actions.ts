@@ -13,7 +13,8 @@ export type AttachmentParent =
   | { meterReadingId: string }
   | { billId: string }
   | { maintenanceItemId: string }
-  | { inventoryItemId: string };
+  | { inventoryItemId: string }
+  | { repairId: string };
 
 export async function uploadAttachment(
   parent: AttachmentParent,

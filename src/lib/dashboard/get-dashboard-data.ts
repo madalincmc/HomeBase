@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { bills, chores, maintenanceItems, utilities, activities } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { getDueItems, type DueItem, type DueBucket } from "./get-due-items";
+import { getOpenRepairsSummary, type OpenRepairSummary } from "@/lib/repairs/get-repairs";
 
 export type DashboardItemKind = DueItem["kind"];
 export type DashboardItem = DueItem;
@@ -12,6 +13,7 @@ export type DashboardBuckets = Record<DueBucket, DashboardItem[]>;
 export type DashboardData = {
   householdName: string;
   buckets: DashboardBuckets;
+  openRepairs: OpenRepairSummary[];
   overview: {
     utilities: number;
     chores: number;
@@ -30,7 +32,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     buckets[item.bucket].push(item);
   }
 
-  const [choreCount, maintenanceCount, utilityCount, unpaidBillCount, recentActivity] = await Promise.all([
+  const [choreCount, maintenanceCount, utilityCount, unpaidBillCount, recentActivity, openRepairs] = await Promise.all([
     db.select().from(chores).where(eq(chores.householdId, household.id)),
     db.select().from(maintenanceItems).where(eq(maintenanceItems.householdId, household.id)),
     db.select().from(utilities).where(eq(utilities.householdId, household.id)),
@@ -41,11 +43,13 @@ export async function getDashboardData(): Promise<DashboardData> {
       .where(eq(activities.householdId, household.id))
       .orderBy(desc(activities.occurredAt))
       .limit(10),
+    getOpenRepairsSummary(),
   ]);
 
   return {
     householdName: household.name,
     buckets,
+    openRepairs,
     overview: {
       utilities: utilityCount.length,
       chores: choreCount.length,

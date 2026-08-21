@@ -799,6 +799,56 @@ first two triggered notifications and dashboard entries (the far-future one corr
 confirmed the bell notification linked back to `/inventory` and marked itself read, and confirmed
 the create/edit form's start-after-expiration validation rejects with a clear error.
 
+## Repair management (Phase 3)
+
+A `repairs` table for one-off household problems — deliberately **not** built on the
+`schedules`/`task_occurrences` recurrence engine like chores/maintenance, since a repair isn't
+recurring: it has a status workflow (`open` → `in_progress`/`waiting` → `resolved`) instead of an
+occurrence history. Also deliberately has **no room/area field**, unlike chores/maintenanceItems/
+documents/inventory — MAD-110's acceptance criteria never mentions one, so this doesn't add it
+speculatively the way those other features' own criteria explicitly asked for.
+
+**`attachments` gained a fifth parent column** (`repairId`), the same exactly-one-parent CHECK
+constraint extension as MAD-108's `inventoryItemId`. Attachment timing also follows the bills/
+inventory pattern (create or edit time), not maintenance's completion-time pattern — a repair has
+no single "completion" moment the way a maintenance occurrence does.
+
+**Two ways to move a repair to "resolved," matching precedent from two different features.**
+`EditRepairDialog` includes a full `status` select (all four states) for general corrections —
+same shape as every other full edit dialog in the app. `ResolveRepairDialog` is a *second*,
+smaller dialog mirroring `MarkPaidDialog` (bills, MAD-93) exactly: pre-filled repaired-date, an
+optional final cost, one confirm tap — because "resolved" is clearly the common terminal action
+worth a fast path, the same reasoning bills' mark-paid flow and maintenance's complete flow already
+established. `updateRepair()` and `resolveRepair()` both log the `repair_resolved` activity, with
+`updateRepair()` checking `wasResolved` first so editing an *already*-resolved repair's other
+fields doesn't double-log.
+
+**`"repair"` joins `HouseholdCategory`** (`src/lib/category.ts`) — unlike `"warranty"` (MAD-109),
+which deliberately stays *outside* that taxonomy because nothing is ever logged when a warranty
+expires. A resolved repair *is* a genuine logged action (`repair_resolved`, alongside
+`meter_reading`/`bill_payment`/`chore_completed`/`maintenance_completed`), so it belongs in the
+same taxonomy that backs the dashboard's icons and History's category filter — and unlike the
+warranty case, adding it here doesn't create a filter option that can never have matching data.
+This pairing (repair: yes, warranty: no) is the concrete rule for any future "does this join
+`HouseholdCategory`?" decision: **only if the feature actually writes an `activities` row.**
+
+**"Surface open repairs on the dashboard" needed a new, separate dashboard section, not a
+`getDueItems()` extension.** Every existing dashboard section (Today/Needs Attention/Upcoming,
+and warranties per MAD-109) is keyed off a due *date* — repairs have no date to bucket by
+overdue/due-today/upcoming, they're just open-ended until resolved. `RepairsSection`
+(`src/components/dashboard/repairs-section.tsx`) is its own small component fed by
+`getOpenRepairsSummary()` (any non-resolved repair), slotted between Needs Attention and Upcoming
+on both mobile and desktop — open repairs are as actionable as overdue items, just not
+date-driven — pushing Upcoming/Household Overview/Recent Activity down one `order-*` tier each.
+
+Verified against live data end to end: created a repair (title/description/priority/contractor +
+a real file upload), confirmed it appeared on both `/repairs` and the dashboard's new Repairs
+section with the correct icon/badges, resolved it via the quick dialog (repaired date + cost),
+confirmed the dashboard section correctly emptied afterward, confirmed the `repair_resolved`
+activity appeared in History with a working "Repairs" category filter, and confirmed deleting a
+second repair with an attachment actually removed the underlying Blob file (`vercel blob list`),
+not just the DB row.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
