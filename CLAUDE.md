@@ -1002,6 +1002,75 @@ repaint-timing artifact of the automation tooling, not a defect in the CSS. The 
 numbers (60px row, branding strip minimum) are a starting point worth eyeballing on a real device,
 not something this sandbox can pixel-tune.
 
+## Water meter points
+
+A household need, not a Linear ticket: a water utility can have several physical meters to read
+each visit (e.g. separate taps for kitchen/bathroom/garden) — every other utility type stays
+single-meter. `meterPoints` is a new table (`id`, `utilityId`, `name`) scoped to one utility, not
+the household the way `rooms` is — a meter point only ever makes sense in the context of the one
+utility it belongs to, and reusing `rooms` here would conflate "where a chore happens" with "which
+physical meter this is," two genuinely different concepts that only sometimes coincide.
+`meterReadings.meterPointId` is a nullable FK, `ON DELETE SET NULL` (same reasoning as
+`chores.roomId`/`maintenanceItems.roomId`) — deleting a point unassigns its history rather than
+destroying it. A utility with zero points behaves exactly as it always has; the feature is entirely
+opt-in per utility, gated on data existing, same "conditionally rendered by data availability"
+convention as the room field in chore/maintenance forms.
+
+**The "Meter points" management section is water-only in the UI** (`MeterPointsSection`, rendered
+only when `utility.type === "water"` on `/utilities/[id]`), even though nothing at the schema/action
+level actually requires that — the household's real need is water-specific, so this doesn't
+speculatively expose multi-point entry for gas/electricity utilities that were never asked for it.
+
+**Consumption had to become point-aware everywhere it's computed, not just where readings are
+entered.** Three separate call sites derive consumption from raw `meterReadings` rows
+(`getUtilityDetail`'s history table, `getConsumptionHistory`'s chart data, and
+`getUtilitiesWithLatestReadings`'s list-page summary) — comparing two readings from *different*
+meter points as if they were the same meter would produce a nonsensical delta the moment a
+household actually has 3 points sharing a reading date. `annotateReadingsWithConsumption()`
+(`src/lib/utilities/consumption.ts`) is the one shared fix: it groups readings by `meterPointId`
+(readings with none form their own group keyed by `null`, which is every reading for a
+single-meter utility — a complete no-op for every existing utility type) and computes each
+reading's delta only against the previous reading in its *own* group. All three call sites now
+annotate once and reuse the exact same downstream logic they already had (monthly bucketing,
+newest-first display, latest-value summary) unchanged — consumption entries just happen to be
+correct per-point now instead of naively sequential.
+
+`getUtilitiesWithLatestReadings()`'s list-page summary sums whichever readings share the latest
+date across all of a utility's points (trivially just the one latest row for a single-meter
+utility, unchanged from before) and sums their individually-computed consumption the same way —
+so the `/utilities` row shows one combined total rather than an arbitrary single point's value.
+
+**The reading form submits N times, not once, for a utility with points** — `AddReadingForm`
+branches entirely on `meterPoints.length`: zero keeps the original single `ScanCaptureField` +
+value input untouched; one-or-more renders a repeated block per point (each with its own
+`ScanCaptureField`, given a unique `name` prop like `file-<pointId>` so multiple hidden file inputs
+can coexist in one `<form>` without colliding — `ScanCaptureField` gained a `name` prop for exactly
+this), sharing one date and one notes field for the whole visit. On submit, each point's
+value/file/meterPointId gets its own constructed `FormData` and its own sequential
+`addMeterReading` + `uploadAttachment` call — not one bulk transactional insert. This is the same
+non-atomic-but-recoverable trade-off already accepted elsewhere (a reading whose photo upload fails
+still keeps the reading): if one point's insert fails partway through a 3-point submission, the
+points already saved don't need re-adding, and the error names which point failed. The submit
+button reads "Add readings" (plural) only when points exist.
+
+**The quick-actions FAB reaches this too, not just the full utility detail page** —
+`getQuickActionContext()` fetches each utility's meter points alongside it, since mobile is this
+household's primary way of actually entering readings (per the product's own "mobile helps you
+take care of it" split) and the fast path would otherwise silently regress to single-value entry
+for water.
+
+**`normalizeReadingValue`'s whole-number-only rule (see the Meter-reading OCR section above)
+already meant every scanned point value truncates its own decimal independently** — no special
+handling needed for multi-point scanning, since normalization happens per extraction call, not
+once per form.
+
+Verified end-to-end against real data: added 3 points (Kitchen/Bathroom/Garden) to the household's
+actual water utility, submitted one round of 3 readings including a real meter photo (auto-scanned
+and normalized correctly), submitted a second round, and confirmed each point's consumption
+computed correctly against only its own history (not the others') — then confirmed deleting a
+point unassigned its readings (`meter_point_id` → `null`) rather than deleting them, and confirmed
+the FAB's water-reading flow shows the same per-point fields as the full page.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

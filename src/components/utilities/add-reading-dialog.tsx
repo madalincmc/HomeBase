@@ -40,7 +40,12 @@ export function AddReadingDialog({
             No utilities yet — add one from the Utilities page first.
           </p>
         ) : selected ? (
-          <AddReadingForm utilityId={selected.id} unit={selected.unit} onSuccess={() => onOpenChange(false)} />
+          <AddReadingForm
+            utilityId={selected.id}
+            unit={selected.unit}
+            meterPoints={selected.meterPoints}
+            onSuccess={() => onOpenChange(false)}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {utilities.map((utility) => (

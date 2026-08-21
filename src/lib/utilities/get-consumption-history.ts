@@ -1,23 +1,16 @@
 import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { meterReadings } from "@/db/schema";
-import { computeConsumption } from "./consumption";
-import type { DateOnly } from "@/lib/schedule";
-
-// A gap this long between two consecutive readings means at least one
-// reading was very likely missed — flagged regardless of the utility's own
-// reading-reminder frequency (even a monthly-scheduled utility with a
-// 45+ day gap between actual readings has a real gap), rather than trying
-// to compute an "expected" gap per schedule frequency.
-const GAP_THRESHOLD_DAYS = 45;
+import { annotateReadingsWithConsumption } from "./consumption";
 
 export type ConsumptionEntry = {
   id: string;
-  date: DateOnly;
+  date: string;
   value: number;
   consumption: number | null;
-  // True when the previous reading was more than GAP_THRESHOLD_DAYS earlier
-  // — this reading's consumption (if any) spans an incomplete period.
+  // True when the previous reading of the same meter point was more than 45
+  // days earlier (see annotateReadingsWithConsumption) — this reading's
+  // consumption (if any) spans an incomplete period.
   gap: boolean;
 };
 
@@ -26,12 +19,6 @@ export type MonthlyConsumption = {
   totalConsumption: number | null; // null only when nothing in the month was computable at all
   hasGap: boolean;
 };
-
-function daysBetween(a: DateOnly, b: DateOnly): number {
-  const aTime = new Date(`${a}T00:00:00Z`).getTime();
-  const bTime = new Date(`${b}T00:00:00Z`).getTime();
-  return Math.round((bTime - aTime) / 86_400_000);
-}
 
 export async function getConsumptionHistory(utilityId: string): Promise<{
   history: ConsumptionEntry[];
@@ -43,17 +30,17 @@ export async function getConsumptionHistory(utilityId: string): Promise<{
     .where(eq(meterReadings.utilityId, utilityId))
     .orderBy(asc(meterReadings.readingDate), asc(meterReadings.createdAt));
 
-  const history: ConsumptionEntry[] = readings.map((reading, index) => {
-    const previous = readings[index - 1];
-    const gap = previous ? daysBetween(previous.readingDate, reading.readingDate) > GAP_THRESHOLD_DAYS : false;
-    return {
-      id: reading.id,
-      date: reading.readingDate,
-      value: Number(reading.value),
-      consumption: previous ? computeConsumption(previous.value, reading.value) : null,
-      gap,
-    };
-  });
+  // Grouped by meter point internally, so a water utility's 3 points each
+  // get their own delta chain instead of being compared against each other
+  // — the monthly bucketing below sums across points unchanged either way.
+  const annotated = annotateReadingsWithConsumption(readings);
+  const history: ConsumptionEntry[] = annotated.map((reading) => ({
+    id: reading.id,
+    date: reading.readingDate,
+    value: Number(reading.value),
+    consumption: reading.consumption,
+    gap: reading.gap,
+  }));
 
   // Bucketed by the month of the *later* reading in each pair — "how much
   // was used, as recorded during month X" — summing multiple deltas that

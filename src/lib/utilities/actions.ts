@@ -3,7 +3,7 @@
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { utilities, schedules, meterReadings, activities } from "@/db/schema";
+import { utilities, schedules, meterReadings, meterPoints, activities } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { isValidDateOnly } from "@/lib/schedule";
 
@@ -171,14 +171,30 @@ export async function addMeterReading(
     const readingDate = readRequiredDate(formData, "readingDate", "Reading date");
     const notes = readOptionalString(formData, "notes");
 
+    // Present only for a water-style utility with named meter points (see
+    // the schema comment on meterReadings.meterPointId) — every other
+    // utility just omits this field and behaves exactly as before.
+    const meterPointId = readOptionalString(formData, "meterPointId");
+    let pointName: string | null = null;
+    if (meterPointId) {
+      const [point] = await db
+        .select()
+        .from(meterPoints)
+        .where(and(eq(meterPoints.id, meterPointId), eq(meterPoints.utilityId, utilityId)));
+      if (!point) throw new Error("Meter point not found.");
+      pointName = point.name;
+    }
+
     const [reading] = await db
       .insert(meterReadings)
-      .values({ utilityId, value: valueRaw, readingDate, notes })
+      .values({ utilityId, meterPointId, value: valueRaw, readingDate, notes })
       .returning();
     await db.insert(activities).values({
       householdId: household.id,
       type: "meter_reading",
-      description: `Recorded ${utility.type} reading: ${valueRaw} ${utility.unit}`,
+      description: pointName
+        ? `Recorded ${utility.type} reading (${pointName}): ${valueRaw} ${utility.unit}`
+        : `Recorded ${utility.type} reading: ${valueRaw} ${utility.unit}`,
     });
 
     revalidatePath(`/utilities/${utilityId}`);
