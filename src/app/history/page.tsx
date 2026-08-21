@@ -8,7 +8,7 @@ import type { HouseholdCategory } from "@/lib/category";
 // Reads live household data — see the MAD-91 note in CLAUDE.md.
 export const dynamic = "force-dynamic";
 
-const CATEGORIES: HouseholdCategory[] = ["utility", "bill", "chore", "maintenance"];
+const CATEGORIES: HouseholdCategory[] = ["utility", "bill", "chore", "maintenance", "repair"];
 
 export default async function HistoryPage({
   searchParams,

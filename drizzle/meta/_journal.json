@@ -50,6 +50,13 @@
       "when": 1787307667726,
       "tag": "0006_blushing_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787308904361,
+      "tag": "0007_bumpy_the_phantom",
+      "breakpoints": true
     }
   ]
 }

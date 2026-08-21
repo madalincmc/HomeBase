@@ -1,0 +1,94 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { AttachmentUploadField } from "@/components/attachments/attachment-upload-field";
+import { AttachmentList } from "@/components/attachments/attachment-list";
+import { updateRepair } from "@/lib/repairs/actions";
+import { uploadAttachment } from "@/lib/attachments/actions";
+import { RepairFormFields } from "./repair-form-fields";
+import type { repairs, attachments } from "@/db/schema";
+
+type Repair = typeof repairs.$inferSelect;
+type Attachment = typeof attachments.$inferSelect;
+
+export function EditRepairDialog({ repair, attachments }: { repair: Repair; attachments: Attachment[] }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await updateRepair(repair.id, null, formData);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      const uploadResult = await uploadAttachment({ repairId: repair.id }, ["/repairs", "/"], null, formData);
+      if (!uploadResult.success) {
+        setError(uploadResult.error);
+        return;
+      }
+      setError(null);
+      setOpen(false);
+    });
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setError(null);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit repair</DialogTitle>
+        </DialogHeader>
+        <form action={handleSubmit} className="flex flex-col gap-4">
+          <RepairFormFields
+            includeStatus
+            defaultValues={{
+              title: repair.title,
+              description: repair.description,
+              priority: repair.priority,
+              status: repair.status,
+              reportedDate: repair.reportedDate,
+              repairedDate: repair.repairedDate,
+              cost: repair.cost,
+              contractor: repair.contractor,
+            }}
+          />
+          {attachments.length > 0 && (
+            <Field>
+              <FieldLabel>Attachments</FieldLabel>
+              <AttachmentList attachments={attachments} revalidatePaths={["/repairs", "/"]} />
+            </Field>
+          )}
+          <AttachmentUploadField label="Add photo or document" />
+          {error && <FieldError>{error}</FieldError>}
+          <DialogFooter>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving…" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

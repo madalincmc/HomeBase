@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/shell/page-header";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
+import { RepairsSection } from "@/components/dashboard/repairs-section";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
 import { RecentActivityList } from "@/components/dashboard/recent-activity-list";
 import { getDashboardData } from "@/lib/dashboard/get-dashboard-data";
@@ -10,7 +11,7 @@ import { getDashboardData } from "@/lib/dashboard/get-dashboard-data";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { householdName, buckets, overview, recentActivity } = await getDashboardData();
+  const { householdName, buckets, openRepairs, overview, recentActivity } = await getDashboardData();
 
   return (
     <>
@@ -21,7 +22,10 @@ export default async function Home() {
         overdue-first via the `order-*` utilities below (quick actions are
         already covered by the persistent FAB from MAD-89) and hides the
         Overview/Recent Activity sections entirely, per "Mobile prioritizes
-        overdue, due today, quick actions and upcoming items."
+        overdue, due today, quick actions and upcoming items." Repairs
+        (MAD-110) slots in right after Needs Attention on both breakpoints —
+        open repairs are as actionable as overdue items, just not date-driven
+        — pushing Upcoming/Overview/Recent Activity down one tier each.
       */}
       <div className="flex flex-col gap-4 pb-4 md:gap-6 md:pb-6">
         <DashboardSection
@@ -39,19 +43,20 @@ export default async function Home() {
           emptyMessage="Nothing overdue — you're caught up."
           className="order-1 md:order-2"
         />
+        <RepairsSection repairs={openRepairs} className="order-3" />
         <DashboardSection
           title="Upcoming"
           description="Next 14 days"
           items={buckets.upcoming}
           severity="upcoming"
           emptyMessage="Nothing coming up in the next two weeks."
-          className="order-3"
+          className="order-4"
         />
-        <div className="hidden md:order-4 md:block">
+        <div className="hidden md:order-5 md:block">
           <h2 className="px-6 pt-2 pb-1 text-sm font-semibold">Household Overview</h2>
           <OverviewStats overview={overview} />
         </div>
-        <div className="hidden md:order-5 md:block">
+        <div className="hidden md:order-6 md:block">
           <RecentActivityList activity={recentActivity} />
         </div>
       </div>
