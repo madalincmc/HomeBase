@@ -29,7 +29,7 @@ export default async function HistoryPage({
     <>
       <PageHeader title="History" description="A chronological timeline of household activity." />
       <HistoryFilters category={category ?? "all"} from={from ?? ""} to={to ?? ""} />
-      <ActivityList activity={activity} />
+      <ActivityList activity={activity} hasFilters={Boolean(category || from || to)} />
     </>
   );
 }

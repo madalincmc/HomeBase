@@ -2,11 +2,23 @@ import { CATEGORY_ICON } from "@/lib/category";
 import { formatActivityTimestamp } from "@/lib/activities/format";
 import type { ActivityHistoryEntry } from "@/lib/activities/get-activity-history";
 
-export function ActivityList({ activity }: { activity: ActivityHistoryEntry[] }) {
+export function ActivityList({
+  activity,
+  hasFilters = false,
+}: {
+  activity: ActivityHistoryEntry[];
+  // An empty list means two very different things — "your filters excluded
+  // everything" vs. "nothing has ever happened" — and this component can't
+  // tell them apart on its own. Telling a brand-new household that nothing
+  // matches filters it never set is just confusing.
+  hasFilters?: boolean;
+}) {
   if (activity.length === 0) {
     return (
       <p className="px-4 py-6 text-sm text-muted-foreground md:px-6">
-        No activity matches these filters.
+        {hasFilters
+          ? "No activity matches these filters."
+          : "Nothing recorded yet — activity shows up here as readings, payments, and completed tasks happen."}
       </p>
     );
   }
