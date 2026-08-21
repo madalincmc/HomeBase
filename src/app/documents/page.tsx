@@ -41,7 +41,7 @@ export default async function DocumentsPage({
         categories={categories}
         rooms={rooms}
       />
-      <DocumentList documents={documents} />
+      <DocumentList documents={documents} hasFilters={Boolean(q || category || roomId)} />
     </>
   );
 }

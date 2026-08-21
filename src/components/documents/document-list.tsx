@@ -8,9 +8,23 @@ import { deleteDocument } from "@/lib/documents/actions";
 import { formatActivityTimestamp } from "@/lib/activities/format";
 import type { DocumentRow } from "@/lib/documents/get-documents";
 
-export function DocumentList({ documents }: { documents: DocumentRow[] }) {
+export function DocumentList({
+  documents,
+  hasFilters = false,
+}: {
+  documents: DocumentRow[];
+  // Same distinction as the history list: an empty result means something
+  // different depending on whether filters are actually narrowing it.
+  hasFilters?: boolean;
+}) {
   if (documents.length === 0) {
-    return <p className="px-4 py-4 text-sm text-muted-foreground md:px-6">No documents match — try a different search or filter.</p>;
+    return (
+      <p className="px-4 py-4 text-sm text-muted-foreground md:px-6">
+        {hasFilters
+          ? "No documents match — try a different search or filter."
+          : "No documents yet — add receipts, warranties, manuals or contracts to keep them together."}
+      </p>
+    );
   }
 
   return (
