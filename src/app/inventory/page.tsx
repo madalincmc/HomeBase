@@ -46,7 +46,11 @@ export default async function InventoryPage({
 
       {items.length === 0 ? (
         <p className="px-4 py-4 text-sm text-muted-foreground md:px-6">
-          No inventory items match — try a different search or filter.
+          {/* "Nothing matches your filters" is wrong when no filters are set —
+              which is exactly the state a new household starts in. */}
+          {q || category || roomId
+            ? "No inventory items match — try a different search or filter."
+            : "No inventory items yet — add one to start tracking appliances and other assets."}
         </p>
       ) : (
         <div className="divide-y border-y">
