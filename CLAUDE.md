@@ -526,6 +526,34 @@ bytes directly in the Server Action and never touches Blob storage; the actual a
 still happens exactly as it did before (MAD-96's `uploadAttachment`, after the bill is created),
 regardless of whether extraction ran, succeeded, or was never attempted.
 
+## Meter-reading OCR (Phase 2)
+
+Same Gemini/`@ai-sdk/google` approach as bill extraction (MAD-103) — one Zod field (`value`), same
+non-nullable-string-with-`""`-fallback pattern, same one-shot `high`/`medium`/`low` confidence.
+`src/lib/utilities/extract-reading.ts` mirrors `extract-bill.ts`'s shape closely on purpose; if a
+third extraction use case shows up, that's the point to factor out the shared parts (file
+validation, the try/catch-with-generic-fallback shape), not before — two call sites doesn't
+justify it yet.
+
+**The scan trigger lives inside `AddReadingForm` itself, not a wrapping dialog** — unlike bills,
+which have one dedicated `CreateBillDialog`, `AddReadingForm` is already the single shared
+component used both inline on the utility detail page and inside `AddReadingDialog` (MAD-100's
+quick-action wrapper), so adding "Scan with AI" there once covers both call sites automatically.
+
+**The reading field is updated via a direct ref, not a `key`-remount.** Bill extraction
+(MAD-103) forces `BillFormFields` to re-mount with new `defaultValues` because it's populating
+many fields at once and that component already took a `defaultValues` prop for the edit dialog's
+sake. Meter reading extraction has exactly one field to populate, so `valueInputRef.current.value
+= result.data.value` is simpler and doesn't need the extra machinery — same end result (an
+uncontrolled input showing the new value), less code for a one-field case.
+
+**Verified extraction resilience against a transient failure, not just the happy path**: the first
+scan attempt during testing hit a real `AI_APICallError` ("high demand") from Gemini's API — this
+surfaced to the user as the intended generic manual-fallback message while the actual `AI_RetryError`
+was logged server-side, then a retry succeeded and read the test meter's value correctly. Confirms
+the try/catch boundary around the model call (not just around file validation) is doing its job,
+not merely handling errors that never happen in practice.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
