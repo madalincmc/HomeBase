@@ -49,6 +49,23 @@
 }
 
 :root {
+  /* Mobile bottom nav = a row of tappable buttons sitting above a thin
+     branding strip that absorbs the iOS safe-area inset (the home-indicator
+     gesture zone). Before this existed, the buttons row itself extended
+     into that zone, so a tap near the bottom edge could land under the
+     indicator instead of the button. All three consumers — MobileNav,
+     AppShell's <main> bottom padding, and the FAB's offset — read
+     --mobile-footer-height rather than each guessing their own magic
+     number, so they can't drift out of sync with each other. viewportFit:
+     "cover" (src/app/layout.tsx) is what makes env(safe-area-inset-bottom)
+     resolve to a real value here instead of always reading 0. Starting
+     numbers — worth eyeballing on a real notched device and nudging, not
+     something this sandbox can verify (see the CLAUDE.md note on why real
+     narrow-viewport testing isn't available here). */
+  --mobile-nav-row-height: 3.75rem;
+  --mobile-nav-branding-height: calc(1.125rem + max(env(safe-area-inset-bottom), 0.375rem));
+  --mobile-footer-height: calc(var(--mobile-nav-row-height) + var(--mobile-nav-branding-height));
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

@@ -15,7 +15,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-sm font-semibold md:hidden">HomeBase</span>
           <NotificationBell />
         </div>
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        {/* pb reads the same --mobile-footer-height MobileNav sizes itself
+            with (globals.css) — a magic-number match here would silently
+            drift out of sync the next time that footer's height changes. */}
+        <main className="flex-1 pb-[var(--mobile-footer-height)] md:pb-0">{children}</main>
       </div>
       <MobileNav />
       <QuickActionButton />
