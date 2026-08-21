@@ -45,9 +45,12 @@ export function QuickActionButton() {
 
   return (
     <>
+      {/* bottom reads the same --mobile-footer-height MobileNav sizes itself
+          with (globals.css) — keeps the FAB sitting right above the footer
+          regardless of how tall the safe-area branding strip ends up being. */}
       <Button
         size="icon-lg"
-        className="fixed right-4 bottom-20 z-40 rounded-full shadow-lg md:hidden"
+        className="fixed right-4 bottom-[var(--mobile-footer-height)] z-40 rounded-full shadow-lg md:hidden"
         onClick={openMenu}
         aria-label="Quick actions"
       >

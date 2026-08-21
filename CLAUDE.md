@@ -934,6 +934,47 @@ push's job alone.
   always just re-enabling from the bell. `push_subscriptions.lastNotifiedAt` shows whether a
   device has ever actually received anything.
 
+## Mobile safe-area footer
+
+Reported: on mobile, the bottom nav labels sat low enough that the iOS home-indicator's own
+horizontal line drew over them, and tapping near the bottom edge felt cramped.
+
+**Root cause, not just a padding tweak.** `env(safe-area-inset-bottom)` resolves to `0` unless
+the page opts into `viewport-fit=cover` — without it, the browser reserves a plain rectangle and
+never tells the page where the unsafe edges are. `layout.tsx` now exports `viewport: { viewportFit:
+"cover" }`, which is what makes the CSS below receive a real, non-zero value on notched devices
+instead of silently no-opting.
+
+`MobileNav` is now a **two-tier footer**: a fixed-height row of tappable buttons
+(`--mobile-nav-row-height`, 3.75rem) sitting above a thin branding strip whose height *is* the
+safe-area inset (`--mobile-nav-branding-height`, `src/app/globals.css`) — "HomeBase", centered,
+muted. The buttons row never has to share space with the home-indicator zone; that space is spent
+on the branding strip instead, which was otherwise just dead, unsafe-to-tap real estate.
+
+**One shared CSS custom property, read by three consumers, so they can't drift apart.**
+`--mobile-footer-height` (`--mobile-nav-row-height` + `--mobile-nav-branding-height`) is read by
+`MobileNav` (implicitly, via its two pieces summing to it), `AppShell`'s `<main
+className="pb-[var(--mobile-footer-height)] md:pb-0">`, and `QuickActionButton`'s
+`bottom-[var(--mobile-footer-height)]`. Before this, the FAB and `<main>`'s bottom padding were
+separate hardcoded `-20`/`bottom-20` magic numbers that happened to match the nav's *old*,
+safe-area-unaware height — exactly the kind of coincidental agreement that silently breaks the
+next time either side changes. Using one variable in three places make that class of bug
+structurally impossible instead of just currently-true.
+
+**Verification note:** this sandbox can't drive a real narrow viewport or a real notched device
+(same limitation already noted elsewhere in this file). Verified instead by forcing the relevant
+`md:hidden` elements visible via injected CSS and reading actual computed geometry — confirmed the
+nav row stays a fixed 60px regardless of safe-area, the branding strip's height tracks a simulated
+`env(safe-area-inset-bottom)` override exactly (24px at a 0 inset, 52px at a simulated 34px iPhone
+inset — the literal formula's output), and the FAB's position tracks the same total and clears the
+taller footer. One live-mutation attempt on an already-rendered page produced a stale
+`getComputedStyle` read for the FAB's `bottom`; baking the same override in *before* first paint
+on a fresh tab resolved consistently, and the compiled CSS bundle was independently confirmed to
+contain the correct `var(--mobile-footer-height)` references — so that one anomaly was a
+repaint-timing artifact of the automation tooling, not a defect in the CSS. The actual pixel
+numbers (60px row, branding strip minimum) are a starting point worth eyeballing on a real device,
+not something this sandbox can pixel-tune.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

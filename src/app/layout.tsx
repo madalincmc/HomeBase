@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/shell/app-shell";
 import "./globals.css";
@@ -23,6 +23,16 @@ export const metadata: Metadata = {
     capable: true,
     title: "HomeBase",
   },
+};
+
+// viewportFit: "cover" is what makes env(safe-area-inset-*) resolve to real
+// pixel values instead of 0 on notched/home-indicator devices — without it,
+// the browser reserves a plain rectangle and the page just never learns
+// where the unsafe edges are. This is the actual root cause of the mobile
+// nav/FAB sitting under the iOS home indicator, not something fixable with
+// padding alone. See the safe-area note in AppShell/MobileNav.
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
