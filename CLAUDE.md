@@ -591,6 +591,54 @@ household has fewer than two utilities — a one-option switcher has no purpose.
 query kept deliberately separate from `getUtilitiesWithLatestReadings()` (used elsewhere) so the
 switcher doesn't pay for reading-aggregation it never displays.
 
+## Household cost analytics (Phase 2)
+
+**`bills.category` is a new nullable free-text column** (migration `0003_kind_jack_murdock.sql`),
+added specifically for this feature — same reasoning as `maintenanceItems.category` (MAD-95):
+no fixed spending-category taxonomy exists anywhere in the PRD, so this stays flexible rather
+than guessing at one (e.g. "Utilities", "Rent"). It's independent of a bill's `utilityId` link —
+a utility-linked bill and a category are separate concepts here, matching how the field is
+presented in the form (an optional text input next to Provider, not derived from the linked
+utility's type).
+
+`getCostAnalytics()` (`src/lib/bills/get-cost-analytics.ts`) aggregates **paid bills only** —
+"spend" means money that actually left the household, not what's upcoming — bucketed by month
+and by year in the same pass, each bucket further broken down by category (`bill.category ??
+"Uncategorized"`, satisfying "handle bills without categories cleanly"). A period's `changePercent`
+compares its total to the immediately preceding period (previous month, or previous year), staying
+`null` for the earliest period on record since there's nothing to compare against — this is the
+"simple trend comparison" the acceptance criteria asked for, deliberately not a multi-period
+rolling average or anything more elaborate. Aggregation happens in JS after one query, not SQL
+`GROUP BY` — same style choice as `getConsumptionHistory()` (MAD-105): a personal household's
+bill history is a tiny dataset, and mixing aggregation styles across features isn't worth it for
+the performance this app will ever actually need.
+
+**No currency conversion — this is a deliberate MVP simplification, not an oversight.**
+`bills.currency` is free text the user types per bill; `getCostAnalytics()` sums raw amounts and
+returns the single most-common currency across paid bills purely for display. A household that
+genuinely mixes currencies would get a nonsensical total, but HomeBase is explicitly a
+single-household personal app with no stated multi-currency requirement anywhere in the PRD —
+same class of trade-off as consumption analytics' undetected meter resets.
+
+`CostAnalytics` (`src/components/bills/cost-analytics.tsx`) mirrors `ConsumptionChart`'s shape
+(MAD-105) on purpose — a Monthly/Yearly toggle instead of Monthly/History, a shadcn/Recharts bar
+chart of totals per period, an empty state when there's no paid-bill history yet. The category
+breakdown underneath is a plain CSS-width proportional bar list, not a second Recharts chart —
+deliberately avoids the custom-`shape`/`isAnimationActive` gotcha MAD-105 already hit once, since
+a plain list needs no custom shape function to color bars by category. The trend indicator
+(`+8% vs previous month`) uses `text-destructive` for an increase and muted styling for a
+decrease/flat — the same "worth a second look" visual convention the OCR features (MAD-103/104)
+established for low-confidence extractions, reused here rather than introducing a new red/green
+positive-negative convention.
+
+Verified against seeded live data with a known-by-hand expected result: three paid bills in June
+2026 across two categories plus one uncategorized (total 1,250), two in July 2026 (total 1,150,
+correctly showing "-8% vs previous month"), and one in June 2025 (200) to exercise the yearly
+view's trend ("+1100% vs previous year" between 2025's 200 and 2026's 2,400). Also verified
+end-to-end through the real Add/Mark-paid/Edit UI flow (not just seeded rows) — created a bill
+with a category through `CreateBillDialog`, marked it paid, and confirmed the new category
+appeared correctly in both the paid-bills list and the category breakdown before cleanup.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

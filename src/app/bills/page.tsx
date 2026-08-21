@@ -3,18 +3,21 @@ import { CreateBillDialog } from "@/components/bills/create-bill-dialog";
 import { EditBillDialog } from "@/components/bills/edit-bill-dialog";
 import { MarkPaidDialog } from "@/components/bills/mark-paid-dialog";
 import { BillStatusBadge } from "@/components/bills/bill-status-badge";
+import { CostAnalytics } from "@/components/bills/cost-analytics";
 import { AttachmentList } from "@/components/attachments/attachment-list";
 import { getBills, getHouseholdUtilities } from "@/lib/bills/get-bills";
 import { getBillDisplayStatus } from "@/lib/bills/status";
+import { getCostAnalytics } from "@/lib/bills/get-cost-analytics";
 import { formatDateOnlyLabel, todayDateOnly } from "@/lib/schedule";
 
 // Reads live household data — see the MAD-91 note in CLAUDE.md.
 export const dynamic = "force-dynamic";
 
 export default async function BillsPage() {
-  const [{ unpaid, paid, scheduleById, attachmentsByBill }, utilities] = await Promise.all([
+  const [{ unpaid, paid, scheduleById, attachmentsByBill }, utilities, costAnalytics] = await Promise.all([
     getBills(),
     getHouseholdUtilities(),
+    getCostAnalytics(),
   ]);
   const today = todayDateOnly();
 
@@ -40,6 +43,7 @@ export default async function BillsPage() {
                   <span className="truncate text-xs text-muted-foreground">
                     {bill.provider ?? "No provider"}
                     {utilityType && ` · ${utilityType}`}
+                    {bill.category && ` · ${bill.category}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
@@ -64,6 +68,11 @@ export default async function BillsPage() {
         )}
       </section>
 
+      <section className="px-4 py-4 md:px-6">
+        <h2 className="mb-2 text-sm font-semibold">Cost analytics</h2>
+        <CostAnalytics monthly={costAnalytics.monthly} yearly={costAnalytics.yearly} currency={costAnalytics.currency} />
+      </section>
+
       <section>
         <h2 className="px-4 pt-4 pb-2 text-sm font-semibold md:px-6">Paid</h2>
         {paid.length === 0 ? (
@@ -80,6 +89,7 @@ export default async function BillsPage() {
                   <span className="truncate text-xs">
                     {bill.provider ?? "No provider"}
                     {utilityType && ` · ${utilityType}`}
+                    {bill.category && ` · ${bill.category}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">

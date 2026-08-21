@@ -16,6 +16,10 @@ export const bills = pgTable("bills", {
   scheduleId: uuid("schedule_id").references(() => schedules.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   provider: text("provider"),
+  // Free text, not an enum — same reasoning as maintenanceItems.category
+  // (MAD-95): no fixed spending-category list is defined anywhere in the
+  // PRD, so this stays flexible rather than guessing at one.
+  category: text("category"),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   currency: text("currency").notNull(),
   issueDate: date("issue_date"),
