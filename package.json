@@ -12,8 +12,10 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.49",
     "@vercel/blob": "^2.8.0",
     "@vercel/functions": "^3.9.5",
+    "ai": "^7.0.73",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",

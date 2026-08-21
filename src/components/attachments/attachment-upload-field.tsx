@@ -4,11 +4,21 @@ import { Input } from "@/components/ui/input";
 // `capture="environment"` invokes the rear camera on mobile browsers that
 // support it, alongside the normal gallery/file-picker option — desktop
 // browsers just ignore it and show a regular file picker.
-export function AttachmentUploadField({ label = "Photo" }: { label?: string }) {
+export function AttachmentUploadField({
+  label = "Photo",
+  inputRef,
+}: {
+  label?: string;
+  // Optional: lets a parent (e.g. the bill dialog's "Scan with AI" button,
+  // MAD-103) read the currently-selected file on demand without a second,
+  // duplicate file picker.
+  inputRef?: React.Ref<HTMLInputElement>;
+}) {
   return (
     <Field>
       <FieldLabel htmlFor="file">{label}</FieldLabel>
       <Input
+        ref={inputRef}
         id="file"
         name="file"
         type="file"

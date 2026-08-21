@@ -477,6 +477,55 @@ zero rows — a safe no-op, not a data-integrity risk, so the extra validation s
 The filter UI is hidden entirely when a household has zero rooms, same "conditionally rendered by
 data availability" pattern the room field itself has used in chore/maintenance forms since MAD-94.
 
+## Bill OCR (Phase 2)
+
+**AI provider is Google Gemini via `@ai-sdk/google`, not Vercel's AI Gateway.** Gateway was tried
+first and technically worked (OIDC auth succeeded), but Vercel requires a credit card on file
+before it'll actually serve any request, gated behind `customer_verification_required` — a real
+blocker for a personal project, not a code problem. Gemini's free tier needs no card at signup and
+its quota (~1,500 requests/day) is far beyond a household's bill-scanning volume. The tradeoff:
+free-tier Gemini prompts may be used by Google to improve their models — a conscious, explicit
+choice for this use case, not an oversight. If this ever needs to move off the free tier or to a
+different provider, `google("gemini-flash-latest")` in `src/lib/bills/extract-bill.ts` is the one
+call site to change.
+
+**Extraction reuses the existing `CreateBillDialog` rather than a separate flow.** The attachment
+field moved to the top of the dialog with a new "Scan with AI" button beside it; `AttachmentUploadField`
+gained an optional `inputRef` so the dialog can read the already-selected file on demand instead of
+needing a second, duplicate file picker just for scanning. `BillFormFields` already accepted a
+`defaultValues` prop (added back in MAD-93 for the edit dialog) — extraction just populates it after
+the fact. Since `defaultValue` only applies at mount, not on prop changes, the fields are forced to
+re-mount via a `key` swap when extraction completes so the new values actually show up on an
+already-open dialog.
+
+**Every field the model returns is a required, non-nullable string, never `z.nullable()`/`z.union()`
+in the Zod schema.** `@ai-sdk/google`'s docs flag that Google's structured-output support is a
+subset of OpenAPI 3.0 that chokes on those Zod features. The model is instructed to return `""` for
+anything it can't find, and `""` is converted to `null` after the response comes back — same
+practical effect as a nullable schema, without hitting the limitation.
+
+**Confidence handling**: the model self-reports one overall `high`/`medium`/`low` confidence (not
+per-field) rather than a confidence score per field — simpler to reason about, and per-field
+nullability already carries most of the same information in practice (a field the model wasn't
+sure about is generally exactly the field it left empty). `low` confidence renders in
+`text-destructive` as a visible nudge to double-check; `medium`/`high` stay muted. This is the
+"confidence handling" acceptance criterion — the actual safety net is that every field stays
+editable regardless of confidence, since the user reviewing and confirming before saving was always
+the real requirement, not the confidence label itself.
+
+**Manual fallback is structural, not a special code path**: extraction only ever *pre-fills* an
+already-fully-functional manual form, so a failed scan (bad file, model error, low-quality photo)
+just means the fields stay empty — the same "Add bill" flow that existed before this feature works
+completely unaffected regardless of whether scanning is used, attempted, or fails. Validation
+errors (no file chosen, wrong type, too large) surface their real message; anything past that point
+(model/network failures) shows one generic message and logs the real cause server-side, rather than
+leaking AI SDK internals to the form.
+
+**Original document attachment is unaffected by any of this** — extraction reads the file's raw
+bytes directly in the Server Action and never touches Blob storage; the actual attachment upload
+still happens exactly as it did before (MAD-96's `uploadAttachment`, after the bill is created),
+regardless of whether extraction ran, succeeded, or was never attempted.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
