@@ -554,6 +554,43 @@ was logged server-side, then a retry succeeded and read the test meter's value c
 the try/catch boundary around the model call (not just around file validation) is doing its job,
 not merely handling errors that never happen in practice.
 
+## Utility consumption analytics (Phase 2)
+
+Chart primitives are shadcn's `chart` component (`npx shadcn@latest add chart`, `src/components/
+ui/chart.tsx`) on top of Recharts 3.8 — `ChartContainer`/`ChartTooltip`/`ChartTooltipContent` with
+CSS-variable-based theming, not a hand-rolled SVG chart or a separate charting library.
+
+`getConsumptionHistory()` (`src/lib/utilities/get-consumption-history.ts`) computes two views from
+the same ordered reading list: a per-reading `history` (each entry's delta from the previous
+reading) and a `monthly` bucketing that sums every delta whose *later* reading falls in a given
+calendar month — a billing period spanning a month boundary is attributed to the month it ended
+in, matching how a utility bill actually lands. A gap of more than `GAP_THRESHOLD_DAYS` (45) since
+the previous reading marks that entry `gap: true` in both views; the chart renders gapped bars in
+a washed-out tone with a caption explaining consumption for that period may be incomplete, rather
+than silently plotting a number that conflates two-plus months of usage as one delta. The
+threshold is a plain constant, not configurable — nothing in the PRD calls for tuning it per
+household.
+
+**Two real Recharts bugs found and fixed during verification, not caught by type-checking:**
+- A custom `shape` function on `<Bar>` (used to color gap bars differently via `GapAwareBar` in
+  `consumption-chart.tsx`) always received `height: 0`, rendering invisible bars regardless of the
+  real data — confirmed via a temporary `console.log` inside the shape function showing `height: 0`
+  even though `x`/`width`/the data value were all correct. Recharts' default bar-growth animation's
+  initial (zero) keyframe doesn't get superseded when a custom `shape` is used. Fixed with
+  `isAnimationActive={false}` on `<Bar>`. **Any future custom-`shape` bar/area chart in this repo
+  needs the same flag**, or it will silently render blank.
+- The gap/normal color assignment was backwards from its own caption on first pass (gap bars used
+  a darker tone than normal bars, contradicting "gapped bars render lighter") — the Nova theme's
+  `--color-chart-*` tokens run light-to-dark by index, so the lightest token (`chart-1`) had to be
+  the "faded/de-emphasized" one, not the darkest. Caught by comparing the rendered screenshot
+  against the caption text, not by any automated check.
+
+`UtilitySwitcher` (`src/components/utilities/utility-switcher.tsx`) renders nothing when the
+household has fewer than two utilities — a one-option switcher has no purpose. Backed by
+`getUtilitiesSummary()` (`src/lib/utilities/get-utilities.ts`), a minimal `{id, type, provider}`
+query kept deliberately separate from `getUtilitiesWithLatestReadings()` (used elsewhere) so the
+switcher doesn't pay for reading-aggregation it never displays.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
