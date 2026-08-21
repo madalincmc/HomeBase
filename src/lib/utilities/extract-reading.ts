@@ -43,7 +43,7 @@ export async function extractMeterReading(
     const bytes = Buffer.from(await file.arrayBuffer());
 
     const { output } = await generateText({
-      model: google("gemini-flash-latest"),
+      model: google("gemini-3.5-flash-lite"),
       output: Output.object({ schema: ExtractedReadingSchema }),
       messages: [
         {
