@@ -482,12 +482,24 @@ data availability" pattern the room field itself has used in chore/maintenance f
 **AI provider is Google Gemini via `@ai-sdk/google`, not Vercel's AI Gateway.** Gateway was tried
 first and technically worked (OIDC auth succeeded), but Vercel requires a credit card on file
 before it'll actually serve any request, gated behind `customer_verification_required` — a real
-blocker for a personal project, not a code problem. Gemini's free tier needs no card at signup and
-its quota (~1,500 requests/day) is far beyond a household's bill-scanning volume. The tradeoff:
-free-tier Gemini prompts may be used by Google to improve their models — a conscious, explicit
-choice for this use case, not an oversight. If this ever needs to move off the free tier or to a
-different provider, `google("gemini-flash-latest")` in `src/lib/bills/extract-bill.ts` is the one
-call site to change.
+blocker for a personal project, not a code problem. Gemini's free tier needs no card at signup. The
+tradeoff: free-tier Gemini prompts may be used by Google to improve their models — a conscious,
+explicit choice for this use case, not an oversight.
+
+**Pinned to `gemini-3.5-flash-lite`, not `gemini-flash-latest`.** The `-latest` alias always points
+at Google's newest model generation, and a brand-new generation routinely launches with a far
+stricter free-tier daily quota than a mature one — this bit HomeBase for real in production
+(2026-08-21): `-latest` had rolled forward to `gemini-3.7-flash`, whose free tier was just 20
+requests/day, and normal testing plus real usage exhausted it within hours, breaking both AI
+extraction flows with a generic "couldn't read automatically" fallback (the actual cause only
+visible in `vercel logs`, as `AI_APICallError` / `RESOURCE_EXHAUSTED`). `gemini-3.5-flash-lite` is
+past its own launch window with a much more generous free quota, and is more than capable enough for
+pulling a handful of fields out of one photo. **First tried `gemini-2.5-flash-lite`, which failed
+immediately** — Google had already sunset it for new API keys ("no longer available to new users"),
+a reminder to sanity-check a model id actually responds before assuming a swap is done. **Don't
+switch back to `-latest`** for the original reason — pin to a specific dated/versioned model and
+upgrade deliberately instead. There are two call sites sharing this choice:
+`src/lib/bills/extract-bill.ts` (MAD-103) and `src/lib/utilities/extract-reading.ts` (MAD-104).
 
 **Extraction reuses the existing `CreateBillDialog` rather than a separate flow.** The attachment
 field moved to the top of the dialog with a new "Scan with AI" button beside it; `AttachmentUploadField`
