@@ -6,6 +6,7 @@ export * from "./utilities";
 export * from "./bills";
 export * from "./chores";
 export * from "./maintenance";
+export * from "./inventory-items";
 export * from "./task-occurrences";
 export * from "./attachments";
 export * from "./notifications";

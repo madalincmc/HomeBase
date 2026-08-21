@@ -3,13 +3,16 @@
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { documents, bills, maintenanceItems, rooms } from "@/db/schema";
+import { documents, bills, maintenanceItems, inventoryItems, rooms } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { uploadFile, deleteFile } from "@/lib/attachments/blob";
 
 export type DocumentActionResult = { success: true } | { success: false; error: string };
 
-const LINKABLE_TYPES = ["bill", "maintenance_item"] as const;
+// "inventory_item" added in MAD-108 — this is the exact extension MAD-107's
+// schema comment anticipated: a new linkable type needs no migration here,
+// just a new case in this array and the two functions below.
+const LINKABLE_TYPES = ["bill", "maintenance_item", "inventory_item"] as const;
 
 function readRequiredString(formData: FormData, key: string, label: string): string {
   const value = formData.get(key);
@@ -58,6 +61,12 @@ async function assertLinkBelongsToHousehold(
       .from(maintenanceItems)
       .where(and(eq(maintenanceItems.id, link.relatedEntityId), eq(maintenanceItems.householdId, householdId)));
     if (!row) throw new Error("Linked maintenance item not found.");
+  } else if (link.relatedEntityType === "inventory_item") {
+    const [row] = await db
+      .select({ id: inventoryItems.id })
+      .from(inventoryItems)
+      .where(and(eq(inventoryItems.id, link.relatedEntityId), eq(inventoryItems.householdId, householdId)));
+    if (!row) throw new Error("Linked inventory item not found.");
   }
 }
 

@@ -12,7 +12,8 @@ export type AttachmentActionResult = { success: true } | { success: false; error
 export type AttachmentParent =
   | { meterReadingId: string }
   | { billId: string }
-  | { maintenanceItemId: string };
+  | { maintenanceItemId: string }
+  | { inventoryItemId: string };
 
 export async function uploadAttachment(
   parent: AttachmentParent,

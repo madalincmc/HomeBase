@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Wrench, FolderOpen, History, Settings, ChevronRight } from "lucide-react";
+import { Wrench, Package, FolderOpen, History, Settings, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 
 const moreLinks = [
   { href: "/maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/documents", label: "Documents", icon: FolderOpen },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },

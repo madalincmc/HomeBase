@@ -79,7 +79,9 @@ export function CreateDocumentDialog({ rooms, linkable }: { rooms: Room[]; linka
                 </Select>
               </Field>
             )}
-            {(linkable.bills.length > 0 || linkable.maintenanceItems.length > 0) && (
+            {(linkable.bills.length > 0 ||
+              linkable.maintenanceItems.length > 0 ||
+              linkable.inventoryItems.length > 0) && (
               <Field>
                 <FieldLabel htmlFor="link">Link to</FieldLabel>
                 <Select name="link" defaultValue="none">
@@ -103,6 +105,16 @@ export function CreateDocumentDialog({ rooms, linkable }: { rooms: Room[]; linka
                         <SelectLabel>Maintenance</SelectLabel>
                         {linkable.maintenanceItems.map((item) => (
                           <SelectItem key={item.id} value={`maintenance_item:${item.id}`}>
+                            {item.title}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {linkable.inventoryItems.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Inventory</SelectLabel>
+                        {linkable.inventoryItems.map((item) => (
+                          <SelectItem key={item.id} value={`inventory_item:${item.id}`}>
                             {item.title}
                           </SelectItem>
                         ))}
