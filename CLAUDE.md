@@ -908,6 +908,32 @@ instead of creating a duplicate row that would double-notify.
 subscription. The manifest and `appleWebApp` metadata that make standalone launch work were added
 during the investigation that preceded this issue.
 
+**Removed MAD-98's in-tab notification firing, and this is the subtle part.** The bell used to
+call `new Notification()` for every unread row on each refresh, guarded by
+`Notification.permission === "granted"`. That guard meant it was effectively dead code — nobody
+had granted permission, because nothing had ever asked. Adding push *does* ask, so shipping
+MAD-120 would have silently activated a dormant path: opening the app would fire a burst of
+individual notifications restating what the morning push already said, while you were looking at
+the screen. The `localStorage` fired-id bookkeeping went with it. **The lesson generalises — when
+a feature starts satisfying a precondition that older code was quietly waiting on, go looking for
+what that unblocks.** The bell is now purely the in-app inbox (list + unread badge); delivery is
+push's job alone.
+
+**Operational notes**, since this is the feature most likely to need debugging while in use:
+
+- Trigger a slot by hand instead of waiting for the schedule:
+  `curl -H "Authorization: Bearer $CRON_SECRET" ".../api/cron/notify?slot=morning"`. The response
+  echoes `title`/`body`, so it doubles as a way to preview wording.
+- `vercel crons ls` confirms the three jobs are registered; the dashboard's Cron Jobs section has
+  invocation logs.
+- **Rotating the VAPID keypair invalidates every existing subscription** — each device has to
+  re-enable from the bell afterwards. There's no migration path; don't regenerate casually.
+- Changing a cron time means editing **both** `vercel.json` and `SCHEDULE_TO_SLOT`. `npm test`
+  enforces that.
+- A user-visible symptom of nothing arriving is usually a pruned subscription, and the fix is
+  always just re-enabling from the bell. `push_subscriptions.lastNotifiedAt` shows whether a
+  device has ever actually received anything.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
