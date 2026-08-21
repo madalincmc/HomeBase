@@ -14,8 +14,23 @@ import { FieldError } from "@/components/ui/field";
 import { createMaintenanceItem } from "@/lib/maintenance/actions";
 import { MaintenanceFormFields, type MaintenanceFormRoomOption } from "./maintenance-form-fields";
 
-export function CreateMaintenanceDialog({ rooms }: { rooms: MaintenanceFormRoomOption[] }) {
-  const [open, setOpen] = useState(false);
+export function CreateMaintenanceDialog({
+  rooms,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  trigger = true,
+}: {
+  rooms: MaintenanceFormRoomOption[];
+  // Uncontrolled (self-triggering, own state) by default. The quick-actions
+  // menu (MAD-100) needs a controlled instance with no built-in trigger,
+  // since the menu item itself is the trigger.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: boolean;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChangeProp ?? setOpenState;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -39,9 +54,11 @@ export function CreateMaintenanceDialog({ rooms }: { rooms: MaintenanceFormRoomO
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button>Add maintenance item</Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          <Button>Add maintenance item</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add maintenance item</DialogTitle>

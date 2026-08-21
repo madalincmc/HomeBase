@@ -9,7 +9,19 @@ import { AttachmentUploadField } from "@/components/attachments/attachment-uploa
 import { addMeterReading } from "@/lib/utilities/actions";
 import { uploadAttachment } from "@/lib/attachments/actions";
 
-export function AddReadingForm({ utilityId, unit }: { utilityId: string; unit: string }) {
+export function AddReadingForm({
+  utilityId,
+  unit,
+  onSuccess,
+}: {
+  utilityId: string;
+  unit: string;
+  // Optional: the utility detail page embeds this form inline and just
+  // resets it to add another reading, but the quick-actions dialog (MAD-100)
+  // needs to close itself afterward — called once the reading (and any
+  // attachment) has saved successfully.
+  onSuccess?: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -30,8 +42,13 @@ export function AddReadingForm({ utilityId, unit }: { utilityId: string; unit: s
         null,
         formData
       );
-      setError(uploadResult.success ? null : uploadResult.error);
+      if (!uploadResult.success) {
+        setError(uploadResult.error);
+        return;
+      }
+      setError(null);
       formRef.current?.reset();
+      onSuccess?.();
     });
   }
 

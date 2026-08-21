@@ -14,8 +14,23 @@ import { FieldError } from "@/components/ui/field";
 import { createChore } from "@/lib/chores/actions";
 import { ChoreFormFields, type ChoreFormRoomOption } from "./chore-form-fields";
 
-export function CreateChoreDialog({ rooms }: { rooms: ChoreFormRoomOption[] }) {
-  const [open, setOpen] = useState(false);
+export function CreateChoreDialog({
+  rooms,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  trigger = true,
+}: {
+  rooms: ChoreFormRoomOption[];
+  // Uncontrolled (self-triggering, own state) by default. The quick-actions
+  // menu (MAD-100) needs a controlled instance with no built-in trigger,
+  // since the menu item itself is the trigger.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: boolean;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChangeProp ?? setOpenState;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -39,9 +54,11 @@ export function CreateChoreDialog({ rooms }: { rooms: ChoreFormRoomOption[] }) {
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button>Add chore</Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          <Button>Add chore</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add chore</DialogTitle>
