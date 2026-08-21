@@ -10,3 +10,4 @@ export * from "./task-occurrences";
 export * from "./attachments";
 export * from "./notifications";
 export * from "./activities";
+export * from "./documents";

@@ -639,6 +639,74 @@ end-to-end through the real Add/Mark-paid/Edit UI flow (not just seeded rows) �
 with a category through `CreateBillDialog`, marked it paid, and confirmed the new category
 appeared correctly in both the paid-bills list and the category breakdown before cleanup.
 
+## Household document vault (Phase 2)
+
+**A new standalone `documents` table, not a reuse of `attachments`.** `attachments`
+(MAD-96) always requires exactly one parent (a meter reading, bill, or maintenance item — DB-
+enforced by a CHECK constraint) because it represents a photo taken *during* one specific action.
+A vault document is the opposite: it can stand completely alone (a home insurance policy PDF with
+no related entity at all), so a required-parent table doesn't fit. What "existing attachment
+storage is reused" (the acceptance criteria's literal words) actually means here: the Vercel Blob
+upload/delete calls and file-validation rules were extracted out of `attachments/actions.ts` into
+`src/lib/attachments/blob.ts` (`uploadFile`/`deleteFile`/`validateFile`), and both `attachments`
+actions and the new `documents` actions now call the same shared helper — one real code path for
+every file upload in the app, not two parallel Blob integrations.
+
+**Two different FK strategies on the same table, deliberately.** `documents.roomId` ("area") is a
+real nullable FK with `ON DELETE SET NULL` — the same pattern chores/maintenanceItems already use
+for rooms, appropriate because rooms are a known, fixed entity type. `relatedEntityType` (text) +
+`relatedEntityId` (uuid) ("item") is instead the *unenforced* pointer pattern from
+notifications/activities, not a real FK — because the linkable set isn't fixed: it's bills and
+maintenance items today, but the acceptance criteria explicitly calls out "future inventory
+records" (MAD-108, not built yet). A real FK would need a new nullable column and a migration the
+day MAD-108 ships; the unenforced pattern needs neither — same reasoning CLAUDE.md already
+documents for notifications/activities, reapplied here for the first time on a *content* table
+rather than a log table. One consequence carried over from that precedent: deleting a linked bill
+or maintenance item does **not** cascade-delete or unlink the document — a warranty document
+shouldn't vanish just because the bill that originally purchased the item was removed. The UI
+resolves a stale link to no title rather than crashing (`getDocuments()`'s second-pass lookup by
+id, `Map.get(id) ?? null`).
+
+**`documents.category` is free text**, the same no-fixed-taxonomy precedent as `bills.category`
+(MAD-106) and `maintenanceItems.category` (MAD-95) — no fixed document-category list exists in the
+PRD (e.g. "Warranty", "Manual", "Receipt", "Contract").
+
+**"Link to" is one combined `<Select>`, not two dependent dropdowns.** The create dialog's link
+field encodes both the type and the id into a single option value (`"bill:<uuid>"` /
+`"maintenance_item:<uuid>"`), grouped into `SelectGroup`/`SelectLabel` sections per type, parsed
+apart server-side in `readLink()`. A two-step "pick a type, then pick an item" UI (the pattern
+`AddReadingDialog` used for its utility picker, MAD-100) would need extra client state for a
+dependent second field; a household's combined bill + maintenance-item count is small enough that
+one flat grouped list is simpler and needs none.
+
+**Search matches title, category, notes, and the original filename** (`getDocuments()`'s `ilike`
+across all four) — "search by title and metadata" from the acceptance criteria, where "metadata"
+is interpreted as the notes field plus whatever came from the uploaded file itself, not a
+separate structured-metadata system. The category and area filter dropdowns are conditionally
+rendered only when at least one document has that data (`getDocumentCategories()` returning
+distinct values, `getHouseholdRooms()`), same "hidden until there's data" convention used
+everywhere else in the app (chore/maintenance room fields, the `/tasks` and `/maintenance` room
+filters). Combined into one `next/form` GET, same MAD-99/MAD-97 pattern as `HistoryFilters`/
+`RoomFilter` — a real navigation with search params, no client state.
+
+**A file is required, unlike every other attachment flow in the app.** `AttachmentUploadField`
+gained an optional `required` prop (default `false`, so every existing call site is unaffected)
+because a vault document's entire purpose is the file — unlike a bill or meter reading, where the
+photo is optional supporting evidence for something that already has other required fields.
+
+**No activity-history integration.** Every other create/complete action in the app
+(readings, bill payments, chore/maintenance completions) logs an `activities` row — a document
+upload deliberately does not. The closer precedent is rooms (MAD-97), which also doesn't log
+activity: both are administrative record-keeping, not a household task being done, and the
+acceptance criteria doesn't ask for it. Revisit only if a future issue explicitly asks for
+documents to appear in the History timeline.
+
+**New top-level nav item, unlike Rooms.** Rooms (MAD-97) lives inside Settings because it's
+configuration for other features, not a content area of its own. The document vault is exactly
+what its own name says — a real place to browse/search — so it gets a normal `desktopNavItems`
+entry and, on mobile, a `/more` entry alongside Maintenance/History/Settings, matching how every
+other genuine content section is reachable.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
