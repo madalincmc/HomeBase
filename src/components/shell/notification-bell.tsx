@@ -45,46 +45,13 @@ const BUCKET_LABEL = {
   upcoming: "Upcoming",
 } as const;
 
-// Browser Notification API only — no service worker/push (that's PWA scope,
-// MAD-101). Firing only happens while this tab is open; each notification's
-// id is remembered in localStorage so a fresh mount/refetch doesn't re-fire
-// ones already shown.
-const FIRED_STORAGE_KEY = "homebase:fired-notifications";
-
-function readFiredIds(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = window.localStorage.getItem(FIRED_STORAGE_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function rememberFiredIds(ids: Set<string>) {
-  try {
-    // Cap so this can't grow unbounded over a long-lived browser profile.
-    window.localStorage.setItem(FIRED_STORAGE_KEY, JSON.stringify([...ids].slice(-200)));
-  } catch {
-    // Storage unavailable (private browsing, quota) — firing just repeats
-    // across sessions, which is a minor annoyance, not a functional break.
-  }
-}
-
-function fireBrowserNotifications(items: NotificationListItem[]) {
-  if (typeof window === "undefined" || !("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-
-  const fired = readFiredIds();
-  const unfired = items.filter((n) => !n.read && !fired.has(n.id));
-  if (unfired.length === 0) return;
-
-  for (const item of unfired) {
-    new Notification(item.title, { body: item.body ?? undefined });
-    fired.add(item.id);
-  }
-  rememberFiredIds(fired);
-}
+// MAD-98 also fired an in-tab `new Notification()` per unread item whenever
+// this component refreshed. That was removed in MAD-120: it only ever ran
+// with permission granted, which almost nobody did until enabling push
+// started requiring it — at which point opening the app would fire a burst
+// of individual notifications repeating what the scheduled push had already
+// said, while you were literally looking at the app. Push handles delivery
+// now; the bell is purely the in-app inbox.
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -106,7 +73,6 @@ export function NotificationBell() {
       const data = await getNotificationCenterData();
       setItems(data.notifications);
       setUnreadCount(data.unreadCount);
-      fireBrowserNotifications(data.notifications);
     });
   }
 
