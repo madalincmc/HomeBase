@@ -566,6 +566,21 @@ was logged server-side, then a retry succeeded and read the test meter's value c
 the try/catch boundary around the model call (not just around file validation) is doing its job,
 not merely handling errors that never happen in practice.
 
+**The extracted value is always just the leading whole-number digit row — never a decimal, per an
+explicit household rule.** Superseded an earlier, subtler heuristic ("include trailing digits as a
+decimal only if a decimal point is visible") after real-world testing on an actual gas meter showed
+it guessing wrong: many household meters print the billed whole-number reading in black and a
+fractional/test portion after a comma in a different color (often red), and the user wants that
+fractional part dropped unconditionally, never kept as a decimal. `normalizeReadingValue()`
+(`src/lib/utilities/normalize-reading-value.ts`) enforces this deterministically on top of the
+model's own output — split at the first `.`/`,`, keep only the digits before it, strip leading
+zeros — rather than trusting the prompt alone to get it right every time, same reasoning
+`isValidDateOnly` already established for input reaching this app. Pulled into its own file
+specifically so it's a plain, testable pure function (`normalize-reading-value.test.ts`) rather than
+inline in the `"use server"` action module, which can only export async functions. Handles a doubled
+separator (e.g. `"04855,,15"`, seen on the real meter that prompted this change) the same as a
+single one.
+
 ## Utility consumption analytics (Phase 2)
 
 Chart primitives are shadcn's `chart` component (`npx shadcn@latest add chart`, `src/components/

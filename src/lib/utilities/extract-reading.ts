@@ -3,6 +3,7 @@
 import { generateText, Output } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
+import { normalizeReadingValue } from "./normalize-reading-value";
 
 // Same "no nullable/union in the Zod schema" constraint as bill extraction
 // (MAD-103) — Google's structured-output support is a subset of OpenAPI 3.0
@@ -12,7 +13,7 @@ const ExtractedReadingSchema = z.object({
   value: z
     .string()
     .describe(
-      "The current numeric reading shown on the meter display, as a plain decimal number with no units or thousands separator, e.g. '4821.3'. Empty string if not clearly legible."
+      "The current whole-number reading shown on the meter display's main digit row, with no units or thousands separator, e.g. '4821'. Meters commonly show trailing fractional/test digits after a decimal point or comma, often in a different color (e.g. red) — ignore those entirely and return only the digits before that separator. Empty string if not clearly legible."
     ),
   confidence: z.enum(["high", "medium", "low"]).describe("Confidence that the extracted value is correct."),
 });
@@ -51,7 +52,7 @@ export async function extractMeterReading(
           content: [
             {
               type: "text",
-              text: "Extract the current numeric reading from this utility meter display (electricity, gas, or water). Return just the number as shown, ignoring units. Some meters show trailing decimal digits in a different color (often red) that aren't part of the billed whole-number reading — include them as decimals only if a decimal point is visible, otherwise return the whole-number portion only. If the reading isn't clearly legible, return an empty string rather than guessing.",
+              text: "Extract the current whole-number reading from this utility meter display (electricity, gas, or water) — the digits before any decimal point or comma. Ignore units, thousands separators, and any trailing fractional/test digits after that separator (often shown in a different color, e.g. red) — those are never part of the billed reading. If the reading isn't clearly legible, return an empty string rather than guessing.",
             },
             { type: "file", data: bytes, mediaType: file.type, filename: file.name },
           ],
@@ -59,8 +60,7 @@ export async function extractMeterReading(
       ],
     });
 
-    const value = output.value.trim();
-    return { success: true, data: { value: value === "" ? null : value, confidence: output.confidence } };
+    return { success: true, data: { value: normalizeReadingValue(output.value), confidence: output.confidence } };
   } catch (err) {
     console.error("Meter reading extraction failed:", err);
     return { success: false, error: "Couldn't read this meter automatically. Enter the reading manually." };
