@@ -366,6 +366,47 @@ within the same browser don't re-fire ones already shown; closing the tab and no
 infrastructure means a due reminder won't reach the user while HomeBase isn't open, which is a
 known MVP limitation, not a bug.
 
+## Activity history
+
+Activity *logging* already existed before MAD-99 — every completed action (`addMeterReading`,
+`markBillPaid`, `completeChoreOccurrence`/`skipChoreOccurrence`, `completeMaintenanceOccurrence`)
+already inserted an `activities` row as part of MAD-92 through MAD-95. `skipMaintenanceOccurrence`
+deliberately does not (no `maintenance_skipped` value exists in the `activity_type` enum) — MAD-99's
+own acceptance criteria only calls for "maintenance completions", not skips, so this is scope, not
+a gap. What MAD-99 actually built is the missing other half: reading, filtering, and displaying
+that log — `/history` was a placeholder with zero data access before this.
+
+`src/lib/category.ts` introduces one shared `HouseholdCategory` taxonomy
+(`utility`/`bill`/`chore`/`maintenance`) with its icon and label maps, extracted because the
+dashboard (`DashboardItemRow`'s old local `ICON_BY_KIND`) and this new feature both needed the
+exact same mapping — same reasoning as MAD-98's `getDueItems()` extraction. Activity history maps
+its 5 `activity_type` enum values onto these 4 categories in `get-activity-history.ts`
+(`chore_completed`/`chore_skipped` both collapse to `chore` — users filter at "chore" granularity,
+not completed-vs-skipped).
+
+**The category/date filter bar (`HistoryFilters`) is a `next/form` posting a plain GET to
+`/history`, not client state (`useState`/`router.push`).** Checked this Next.js version's actual
+`<Form>` docs before building it (see the top-of-file warning about not trusting training-data
+Next.js knowledge) — `action="/history"` gets client-side-navigated with prefetching, same UX as a
+router push, but with zero JS state to write or keep in sync. Radix's `Select` participates in the
+native form submission via its `name` prop (already relied on elsewhere, e.g. chore/bill priority
+selects), so the category dropdown works exactly like the plain date `<input>`s beside it — no
+special-casing needed. `/history`'s own page component reads the result back through its
+`searchParams` prop and **re-validates `from`/`to` with `isValidDateOnly` before querying** — unlike
+a form POST body, a GET query string is directly bookmarkable/editable by hand, so the same
+malformed-date boundary risk MAD-92 found applies here too, just from a different entry point.
+
+`formatActivityTimestamp` (`src/lib/activities/format.ts`) is a new shared formatter — both this
+page and the dashboard's Recent Activity list now use it (replacing that component's own inline,
+year-less formatter). `activities.occurredAt` is a real `timestamptz`, unlike the `DateOnly`
+strings used for schedules/due dates elsewhere, so it's deliberately formatted in the viewer's
+*local* timezone (the opposite of `formatDateOnlyLabel`'s deliberate UTC pinning) — see the comment
+in `format.ts` for why the two dates behave differently on purpose.
+
+No pagination — `getActivityHistory` caps at 100 rows, same fixed-limit approach as the
+notification center. A full paginated/searchable history is Phase 2 analytics territory per the
+PRD's phase breakdown, not this issue's scope.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

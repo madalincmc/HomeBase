@@ -1,15 +1,8 @@
 import Link from "next/link";
-import { Zap, Receipt, ListChecks, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateOnlyLabel } from "@/lib/schedule";
+import { CATEGORY_ICON } from "@/lib/category";
 import type { DashboardItem } from "@/lib/dashboard/get-dashboard-data";
-
-const ICON_BY_KIND = {
-  bill: Receipt,
-  chore: ListChecks,
-  maintenance: Wrench,
-  utility: Zap,
-} as const;
 
 export function DashboardItemRow({
   item,
@@ -18,7 +11,7 @@ export function DashboardItemRow({
   item: DashboardItem;
   severity: "overdue" | "today" | "upcoming";
 }) {
-  const Icon = ICON_BY_KIND[item.kind];
+  const Icon = CATEGORY_ICON[item.kind];
 
   return (
     <Link
