@@ -57,6 +57,11 @@ async function assertRoomBelongsToHousehold(roomId: string | null, householdId: 
 }
 
 function readFields(formData: FormData) {
+  const warrantyStartDate = readOptionalDate(formData, "warrantyStartDate", "Warranty start date");
+  const warrantyExpirationDate = readOptionalDate(formData, "warrantyExpirationDate", "Warranty expiration date");
+  if (warrantyStartDate && warrantyExpirationDate && warrantyExpirationDate < warrantyStartDate) {
+    throw new Error("Warranty expiration date can't be before the start date.");
+  }
   return {
     name: readRequiredString(formData, "name", "Name"),
     category: readOptionalString(formData, "category"),
@@ -65,6 +70,8 @@ function readFields(formData: FormData) {
     serialNumber: readOptionalString(formData, "serialNumber"),
     purchaseDate: readOptionalDate(formData, "purchaseDate", "Purchase date"),
     price: readOptionalPrice(formData),
+    warrantyStartDate,
+    warrantyExpirationDate,
   };
 }
 

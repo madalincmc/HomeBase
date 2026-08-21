@@ -21,11 +21,17 @@ export const occurrenceStatusEnum = pgEnum("occurrence_status", [
   "skipped",
 ]);
 
+// "warranty" added in MAD-109 — a warranty expiration is a schedule-derived
+// notification just like the original four, but deliberately doesn't join
+// the HouseholdCategory taxonomy in src/lib/category.ts (History/Activity's
+// categories) — nothing is ever "logged" when a warranty expires, so adding
+// it there would create a filter option History can never have data for.
 export const notificationCategoryEnum = pgEnum("notification_category", [
   "utility",
   "bill",
   "chore",
   "maintenance",
+  "warranty",
   "general",
 ]);
 

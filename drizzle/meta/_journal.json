@@ -43,6 +43,13 @@
       "when": 1787306559342,
       "tag": "0005_woozy_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787307667726,
+      "tag": "0006_blushing_odin",
+      "breakpoints": true
     }
   ]
 }
