@@ -1,8 +1,8 @@
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { utilities, schedules, meterReadings, attachments } from "@/db/schema";
+import { utilities, schedules, meterReadings, meterPoints, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
-import { computeConsumption } from "./consumption";
+import { annotateReadingsWithConsumption } from "./consumption";
 
 export async function getUtilityDetail(utilityId: string) {
   const household = await getOrCreateHousehold();
@@ -16,13 +16,20 @@ export async function getUtilityDetail(utilityId: string) {
     ? ((await db.select().from(schedules).where(eq(schedules.id, utility.scheduleId)))[0] ?? null)
     : null;
 
-  const readings = await db
+  const points = await db.select().from(meterPoints).where(eq(meterPoints.utilityId, utilityId)).orderBy(asc(meterPoints.name));
+  const pointNameById = new Map(points.map((p) => [p.id, p.name]));
+
+  // Fetched ascending (annotateReadingsWithConsumption needs that order to
+  // compute deltas correctly), reversed to newest-first afterward for
+  // display — reversing a list already sorted by (date, createdAt) yields a
+  // valid descending order too.
+  const readingsAscending = await db
     .select()
     .from(meterReadings)
     .where(eq(meterReadings.utilityId, utilityId))
-    .orderBy(desc(meterReadings.readingDate), desc(meterReadings.createdAt));
+    .orderBy(asc(meterReadings.readingDate), asc(meterReadings.createdAt));
 
-  const readingIds = readings.map((r) => r.id);
+  const readingIds = readingsAscending.map((r) => r.id);
   const readingAttachments =
     readingIds.length > 0
       ? await db.select().from(attachments).where(inArray(attachments.meterReadingId, readingIds))
@@ -35,16 +42,14 @@ export async function getUtilityDetail(utilityId: string) {
     attachmentsByReading.set(attachment.meterReadingId, list);
   }
 
-  // readings is newest-first, so the "previous" reading for consumption is
-  // the next one along in this same array, not index - 1.
-  const readingsWithConsumption = readings.map((reading, index) => {
-    const previous = readings[index + 1];
-    return {
+  const annotated = annotateReadingsWithConsumption(readingsAscending);
+  const readingsWithConsumption = annotated
+    .map((reading) => ({
       ...reading,
-      consumption: previous ? computeConsumption(previous.value, reading.value) : null,
+      meterPointName: reading.meterPointId ? (pointNameById.get(reading.meterPointId) ?? null) : null,
       attachments: attachmentsByReading.get(reading.id) ?? [],
-    };
-  });
+    }))
+    .reverse();
 
-  return { utility, schedule, readings: readingsWithConsumption };
+  return { utility, schedule, meterPoints: points, readings: readingsWithConsumption };
 }

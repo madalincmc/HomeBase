@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shell/page-header";
 import { EditUtilityDialog } from "@/components/utilities/edit-utility-dialog";
 import { AddReadingForm } from "@/components/utilities/add-reading-form";
+import { MeterPointsSection } from "@/components/utilities/meter-points-section";
 import { UtilitySwitcher } from "@/components/utilities/utility-switcher";
 import { ConsumptionChart } from "@/components/utilities/consumption-chart";
 import { AttachmentList } from "@/components/attachments/attachment-list";
@@ -17,12 +18,13 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
   const detail = await getUtilityDetail(id);
   if (!detail) notFound();
 
-  const { utility, schedule, readings } = detail;
+  const { utility, schedule, readings, meterPoints } = detail;
   const [utilitiesSummary, consumptionHistory] = await Promise.all([
     getUtilitiesSummary(),
     getConsumptionHistory(id),
   ]);
   const title = utility.type.charAt(0).toUpperCase() + utility.type.slice(1);
+  const hasMeterPoints = meterPoints.length > 0;
 
   return (
     <>
@@ -51,10 +53,15 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
           />
         </section>
 
+        {/* Water-only: a household with several physical meters to read
+            each visit turns this on by adding a point here, at which point
+            the reading form below switches to one value/photo per point. */}
+        {utility.type === "water" && <MeterPointsSection utilityId={utility.id} meterPoints={meterPoints} />}
+
         {/* Mobile prioritizes quick entry; desktop prioritizes history — see MAD-92 in CLAUDE.md. */}
         <section className="order-1 md:order-2">
           <h2 className="mb-2 text-sm font-semibold">Add a reading</h2>
-          <AddReadingForm utilityId={utility.id} unit={utility.unit} />
+          <AddReadingForm utilityId={utility.id} unit={utility.unit} meterPoints={meterPoints} />
         </section>
 
         <section className="order-2 md:order-1">
@@ -67,6 +74,7 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                 <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 font-medium">Date</th>
+                    {hasMeterPoints && <th className="px-3 py-2 font-medium">Location</th>}
                     <th className="px-3 py-2 font-medium">Value</th>
                     <th className="px-3 py-2 font-medium">Consumption</th>
                     <th className="px-3 py-2 font-medium">Notes</th>
@@ -79,6 +87,11 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                       <td className="px-3 py-2 whitespace-nowrap">
                         {formatDateOnlyLabel(reading.readingDate)}
                       </td>
+                      {hasMeterPoints && (
+                        <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                          {reading.meterPointName ?? "—"}
+                        </td>
+                      )}
                       <td className="px-3 py-2 whitespace-nowrap">
                         {reading.value} {utility.unit}
                       </td>

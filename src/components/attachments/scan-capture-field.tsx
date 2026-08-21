@@ -31,6 +31,7 @@ export function ScanCaptureField<T extends { confidence: "high" | "medium" | "lo
   scanAction,
   onScanned,
   resultCaption,
+  name = "file",
   ref,
 }: {
   label: string;
@@ -41,6 +42,10 @@ export function ScanCaptureField<T extends { confidence: "high" | "medium" | "lo
   // caller can drop any previously-applied values.
   onScanned: (data: T | null) => void;
   resultCaption: (confidence: "high" | "medium" | "low") => string;
+  // Override when a form renders more than one instance (e.g. one per
+  // water meter point) — every instance defaulting to "file" would
+  // otherwise submit under the same FormData key.
+  name?: string;
   ref?: React.Ref<ScanCaptureFieldHandle>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,8 +129,8 @@ export function ScanCaptureField<T extends { confidence: "high" | "medium" | "lo
       <input
         ref={inputRef}
         type="file"
-        name="file"
-        id="file"
+        name={name}
+        id={name}
         accept={ACCEPTED_TYPES}
         onChange={handleChange}
         className="sr-only"

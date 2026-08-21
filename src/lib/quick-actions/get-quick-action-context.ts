@@ -1,11 +1,18 @@
 "use server";
 
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { rooms, utilities } from "@/db/schema";
+import { rooms, utilities, meterPoints } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
-export type QuickActionUtility = { id: string; type: string; unit: string; provider: string | null };
+export type QuickActionMeterPoint = { id: string; name: string };
+export type QuickActionUtility = {
+  id: string;
+  type: string;
+  unit: string;
+  provider: string | null;
+  meterPoints: QuickActionMeterPoint[];
+};
 export type QuickActionRoom = { id: string; name: string };
 
 export type QuickActionContext = {
@@ -34,5 +41,27 @@ export async function getQuickActionContext(): Promise<QuickActionContext> {
       .orderBy(asc(rooms.name)),
   ]);
 
-  return { utilities: utilityRows, rooms: roomRows };
+  // Water's multi-point case (see CLAUDE.md) needs to reach the FAB's quick
+  // "Add reading" flow too, not just the full utility detail page — mobile
+  // is the primary way this household actually enters readings.
+  const utilityIds = utilityRows.map((u) => u.id);
+  const pointRows =
+    utilityIds.length > 0
+      ? await db
+          .select({ id: meterPoints.id, utilityId: meterPoints.utilityId, name: meterPoints.name })
+          .from(meterPoints)
+          .where(inArray(meterPoints.utilityId, utilityIds))
+          .orderBy(asc(meterPoints.name))
+      : [];
+  const pointsByUtility = new Map<string, QuickActionMeterPoint[]>();
+  for (const point of pointRows) {
+    const list = pointsByUtility.get(point.utilityId) ?? [];
+    list.push({ id: point.id, name: point.name });
+    pointsByUtility.set(point.utilityId, list);
+  }
+
+  return {
+    utilities: utilityRows.map((utility) => ({ ...utility, meterPoints: pointsByUtility.get(utility.id) ?? [] })),
+    rooms: roomRows,
+  };
 }
