@@ -849,6 +849,65 @@ activity appeared in History with a working "Repairs" category filter, and confi
 second repair with an attachment actually removed the underlying Blob file (`vercel blob list`),
 not just the DB row.
 
+## Web push reminders (MAD-120)
+
+MAD-98 built the notification *centre*; this builds actual **delivery when the app is closed**,
+which is the only thing that makes reminders useful. Before this, `fireBrowserNotifications` in
+the bell could only fire while a tab was open — verified in-browser that this genuinely worked on
+iOS (installed to Home Screen) and Windows, which is what made the push path worth building.
+
+**Self-hosted Web Push, no vendor.** `web-push` + a VAPID keypair, sending directly to Apple's and
+Google's push endpoints — free, unlimited, and **no Apple Developer account** (Safari 16.4+ dropped
+the proprietary APNs mechanism for standard Web Push). `NEXT_PUBLIC_VAPID_PUBLIC_KEY` /
+`VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` live in Vercel env vars. Rejected alternatives, for the
+record: **QStash** (free tier caps message delay at 7 days — useless for a warranty expiring in 200
+days), **AWS EventBridge Scheduler** (works and is free at this volume, but needs a card on file and
+introduces per-item schedule lifecycle management), and a **calendar .ics feed** (precise and free,
+but routes reminders outside the app).
+
+**Three daily cron slots, not per-item timers.** `vercel.json` registers morning/noon/evening jobs
+against one route. **Vercel Hobby allows 100 cron jobs but caps each at once per day, and fires
+within a ±59 minute window of the scheduled hour** — so per-item times ("remind me at 19:30") are
+impossible here, and everything lands at three fixed check-ins. That's fine for date-granularity
+household reminders. Crons run in **UTC**, so the local slot times drift by an hour across DST
+(UTC+3 in summer, UTC+2 in winter) — accepted rather than worked around.
+
+**The route recomputes from the database every run, and that is the whole design.** Vercel
+documents cron delivery as best-effort *and* occasionally duplicated, so the endpoint has to be
+idempotent: it never reads anything stored at schedule time, it just calls `getDueItems()` and
+sends. A duplicate run re-sends the same thing; a missed run is picked up by the next slot. This is
+also why there's no per-item scheduling — that would create distributed state between Postgres and
+a scheduler that could drift.
+
+`composeSlotPayload()` (`src/lib/push/compose.ts`) produces genuinely different wording per slot
+(morning briefing / noon progress / evening "still unfinished"), and **returns `null` when nothing
+is outstanding so no push is sent at all** — three silent days beat three notifications a day that
+train you to ignore them. Noon's progress count comes from `activities` rows created today, which
+counts everything done today rather than strictly today's due items; the wording ("N tasks done so
+far") is honest about that.
+
+**`SLOTS`/`SCHEDULE_TO_SLOT` live in `src/lib/push/slots.ts`, deliberately separate from
+`compose.ts`** — compose imports `@/db`, which opens a pg pool at import time, so putting the
+constants there would drag the driver into a plain unit test. Same reasoning as the
+`@/lib/schedule` barrel note above. `slots.test.ts` reads `vercel.json` and asserts the schedule
+map matches it: the route's `x-vercel-cron-schedule` fallback would otherwise break *silently* if
+someone retimed a job without updating the map — nothing would throw, the cron would just start
+returning 400 at 5am. Verified the test actually fails on drift rather than trusting it.
+
+**The service worker (`public/sw.js`) deliberately has no `fetch` handler and caches nothing.** A
+dashboard whose entire value is "what's due right now" must never serve stale data; the worker
+exists purely so the browser has something to wake for a push. Its `push` handler always displays
+*something* even on a malformed payload, because iOS can revoke a subscription for a silent push.
+
+Dead subscriptions are pruned on `404`/`410` from the push service (`sendPushToHousehold`), so a
+reinstalled browser or evicted iOS web app cleans itself up. `push_subscriptions.endpoint` is
+UNIQUE and the save action upserts on it — re-subscribing the same device refreshes keys in place
+instead of creating a duplicate row that would double-notify.
+
+**iOS requires the app to stay installed on the Home Screen.** Deleting the icon kills the
+subscription. The manifest and `appleWebApp` metadata that make standalone launch work were added
+during the investigation that preceded this issue.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

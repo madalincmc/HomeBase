@@ -57,6 +57,13 @@
       "when": 1787308904361,
       "tag": "0007_bumpy_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787314468809,
+      "tag": "0008_bored_celestials",
+      "breakpoints": true
     }
   ]
 }

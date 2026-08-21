@@ -11,5 +11,6 @@ export * from "./repairs";
 export * from "./task-occurrences";
 export * from "./attachments";
 export * from "./notifications";
+export * from "./push-subscriptions";
 export * from "./activities";
 export * from "./documents";
