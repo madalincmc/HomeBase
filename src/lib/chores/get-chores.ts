@@ -1,16 +1,19 @@
-import { eq, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { chores, rooms, taskOccurrences, schedules } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
-export async function getChores() {
+export async function getChores(filters: { roomId?: string } = {}) {
   const household = await getOrCreateHousehold();
+
+  const conditions = [eq(chores.householdId, household.id)];
+  if (filters.roomId) conditions.push(eq(chores.roomId, filters.roomId));
 
   const rows = await db
     .select({ chore: chores, roomName: rooms.name })
     .from(chores)
     .leftJoin(rooms, eq(chores.roomId, rooms.id))
-    .where(eq(chores.householdId, household.id));
+    .where(and(...conditions));
 
   if (rows.length === 0) {
     return { chores: [], scheduleById: new Map<string, typeof schedules.$inferSelect>() };
@@ -56,9 +59,4 @@ export async function getChores() {
     });
 
   return { chores: sorted, scheduleById };
-}
-
-export async function getHouseholdRooms() {
-  const household = await getOrCreateHousehold();
-  return db.select().from(rooms).where(eq(rooms.householdId, household.id)).orderBy(asc(rooms.name));
 }
