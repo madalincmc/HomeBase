@@ -1,16 +1,13 @@
 "use server";
 
-import { put, del } from "@vercel/blob";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
+import { uploadFile, deleteFile } from "./blob";
 
 export type AttachmentActionResult = { success: true } | { success: false; error: string };
-
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export type AttachmentParent =
   | { meterReadingId: string }
@@ -31,24 +28,12 @@ export async function uploadAttachment(
       // so this is a normal no-op, not an error.
       return { success: true };
     }
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      throw new Error("Only JPEG, PNG, WEBP, HEIC images or PDF documents are supported.");
-    }
-    if (file.size > MAX_SIZE_BYTES) {
-      throw new Error("File must be 10 MB or smaller.");
-    }
-
-    const blob = await put(`attachments/${crypto.randomUUID()}-${file.name}`, file, {
-      access: "public",
-    });
+    const uploaded = await uploadFile(file, "attachments");
 
     await db.insert(attachments).values({
       householdId: household.id,
       ...parent,
-      url: blob.url,
-      filename: file.name,
-      contentType: file.type,
-      sizeBytes: file.size,
+      ...uploaded,
     });
 
     for (const path of paths) revalidatePath(path);
@@ -70,7 +55,7 @@ export async function deleteAttachment(
       .where(and(eq(attachments.id, attachmentId), eq(attachments.householdId, household.id)));
     if (!attachment) throw new Error("Attachment not found.");
 
-    await del(attachment.url);
+    await deleteFile(attachment.url);
     await db.delete(attachments).where(eq(attachments.id, attachmentId));
 
     for (const path of paths) revalidatePath(path);

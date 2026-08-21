@@ -6,6 +6,7 @@ import {
   Receipt,
   ListChecks,
   Wrench,
+  FolderOpen,
   History,
   Settings,
   MoreHorizontal,
@@ -23,6 +24,7 @@ export const desktopNavItems: NavItem[] = [
   { href: "/bills", label: "Bills", icon: Receipt },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/documents", label: "Documents", icon: FolderOpen },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
