@@ -1,16 +1,19 @@
-import { eq, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { maintenanceItems, rooms, taskOccurrences, schedules, attachments } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
-export async function getMaintenanceItems() {
+export async function getMaintenanceItems(filters: { roomId?: string } = {}) {
   const household = await getOrCreateHousehold();
+
+  const conditions = [eq(maintenanceItems.householdId, household.id)];
+  if (filters.roomId) conditions.push(eq(maintenanceItems.roomId, filters.roomId));
 
   const rows = await db
     .select({ item: maintenanceItems, roomName: rooms.name })
     .from(maintenanceItems)
     .leftJoin(rooms, eq(maintenanceItems.roomId, rooms.id))
-    .where(eq(maintenanceItems.householdId, household.id));
+    .where(and(...conditions));
 
   if (rows.length === 0) {
     return {
@@ -62,9 +65,4 @@ export async function getMaintenanceItems() {
     });
 
   return { items: sorted, scheduleById, attachmentsByItem };
-}
-
-export async function getHouseholdRooms() {
-  const household = await getOrCreateHousehold();
-  return db.select().from(rooms).where(eq(rooms.householdId, household.id)).orderBy(asc(rooms.name));
 }

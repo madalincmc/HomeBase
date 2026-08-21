@@ -4,7 +4,9 @@ import { CreateChoreDialog } from "@/components/chores/create-chore-dialog";
 import { EditChoreDialog } from "@/components/chores/edit-chore-dialog";
 import { DeleteChoreDialog } from "@/components/chores/delete-chore-dialog";
 import { OccurrenceActions } from "@/components/chores/occurrence-actions";
-import { getChores, getHouseholdRooms } from "@/lib/chores/get-chores";
+import { RoomFilter } from "@/components/rooms/room-filter";
+import { getChores } from "@/lib/chores/get-chores";
+import { getHouseholdRooms } from "@/lib/rooms/get-rooms";
 import { formatDateOnlyLabel } from "@/lib/schedule";
 
 // Reads live household data — see the MAD-91 note in CLAUDE.md.
@@ -16,13 +18,26 @@ const PRIORITY_VARIANT = {
   high: "destructive",
 } as const;
 
-export default async function TasksPage() {
-  const [{ chores, scheduleById }, rooms] = await Promise.all([getChores(), getHouseholdRooms()]);
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ room?: string }>;
+}) {
+  const { room } = await searchParams;
+  const [{ chores, scheduleById }, rooms] = await Promise.all([
+    getChores({ roomId: room }),
+    getHouseholdRooms(),
+  ]);
 
   return (
     <>
       <PageHeader title="Tasks" description="Recurring household chores." />
-      <div className="flex justify-end p-4 md:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 p-4 md:px-6 md:py-4">
+        {rooms.length > 0 ? (
+          <RoomFilter rooms={rooms} selected={room ?? "all"} basePath="/tasks" />
+        ) : (
+          <div />
+        )}
         <CreateChoreDialog rooms={rooms} />
       </div>
 

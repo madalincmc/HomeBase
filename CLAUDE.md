@@ -445,6 +445,38 @@ form specifically, but it's a `src/components/ui/dialog.tsx` primitive fix, not 
 actions, since any long dialog anywhere in the app could hit it on a small enough screen. Fixed by
 adding `max-h-[85vh] overflow-y-auto` to the content wrapper.
 
+## Rooms and areas
+
+Rooms management lives inside `/settings`, not a new top-level nav item — the Settings page's own
+MAD-89 placeholder copy already said "household name, default rooms, and notification preferences
+will show up here," so this was the intended home, not a new decision. `getHouseholdRooms()` was
+duplicated identically in `chores/get-chores.ts` and `maintenance/get-maintenance.ts` since MAD-94/
+95; consolidated into `src/lib/rooms/get-rooms.ts`, which both now import instead.
+
+**Default rooms (Kitchen/Bathroom/Living Room/Bedroom/Garage/Garden) are one-click suggestions, not
+auto-seeded at household creation.** There's no onboarding flow (MAD-102), so silently creating 6
+rooms nobody asked for the moment `getOrCreateHousehold()` first runs would mean e.g. an apartment
+household gets a "Garden" it never wanted. `AddRoomForm` shows each default as a quick-add chip,
+filtered against existing room names (case-insensitively) so it disappears once added — this list
+naturally shrinks to nothing once all 6 exist, and a deleted default reappears as a suggestion since
+filtering is by current room list, not by "was this ever added."
+
+**Deleting a room needs no application-level cleanup**: `chores.roomId` and `maintenanceItems.roomId`
+are `ON DELETE SET NULL` (MAD-87 schema foresight) — the DB itself unassigns the room from anything
+referencing it. `deleteRoom` is a plain delete; `DeleteRoomDialog`'s confirmation copy just makes
+that consequence visible up front ("will be unassigned, not deleted") rather than leaving the user
+to guess whether it's safe, which is what "removed safely" in the acceptance criteria actually
+needed — the safety itself was already there.
+
+**Room filtering on `/tasks` and `/maintenance`** reuses MAD-99's `next/form` GET-navigation pattern
+(`RoomFilter`, in `src/components/rooms/` despite rendering on those other pages, since it's
+specifically about filtering *by* room) — a real navigation with search params, no client state.
+Unlike History's date filters, an invalid/stale `?room=` value needs no `isValidDateOnly`-style
+guarding: it's passed straight into `eq(chores.roomId, roomId)`, and a non-existent id just matches
+zero rows — a safe no-op, not a data-integrity risk, so the extra validation step isn't needed here.
+The filter UI is hidden entirely when a household has zero rooms, same "conditionally rendered by
+data availability" pattern the room field itself has used in chore/maintenance forms since MAD-94.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**
