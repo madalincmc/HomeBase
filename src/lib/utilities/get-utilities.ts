@@ -1,8 +1,20 @@
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, asc, desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { utilities, meterReadings } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 import { computeConsumption } from "./consumption";
+
+// Minimal shape for the utility switcher (MAD-105) — deliberately not
+// reusing getUtilitiesWithLatestReadings() here, since that also fetches
+// and aggregates readings the switcher never displays.
+export async function getUtilitiesSummary() {
+  const household = await getOrCreateHousehold();
+  return db
+    .select({ id: utilities.id, type: utilities.type, provider: utilities.provider })
+    .from(utilities)
+    .where(eq(utilities.householdId, household.id))
+    .orderBy(asc(utilities.type));
+}
 
 export async function getUtilitiesWithLatestReadings() {
   const household = await getOrCreateHousehold();

@@ -2,8 +2,12 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shell/page-header";
 import { EditUtilityDialog } from "@/components/utilities/edit-utility-dialog";
 import { AddReadingForm } from "@/components/utilities/add-reading-form";
+import { UtilitySwitcher } from "@/components/utilities/utility-switcher";
+import { ConsumptionChart } from "@/components/utilities/consumption-chart";
 import { AttachmentList } from "@/components/attachments/attachment-list";
 import { getUtilityDetail } from "@/lib/utilities/get-utility-detail";
+import { getUtilitiesSummary } from "@/lib/utilities/get-utilities";
+import { getConsumptionHistory } from "@/lib/utilities/get-consumption-history";
 import { formatDateOnlyLabel } from "@/lib/schedule";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +18,18 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
   if (!detail) notFound();
 
   const { utility, schedule, readings } = detail;
+  const [utilitiesSummary, consumptionHistory] = await Promise.all([
+    getUtilitiesSummary(),
+    getConsumptionHistory(id),
+  ]);
   const title = utility.type.charAt(0).toUpperCase() + utility.type.slice(1);
 
   return (
     <>
       <PageHeader title={title} description={utility.provider ?? undefined} />
       <div className="flex flex-col gap-6 p-4 md:p-6">
+        <UtilitySwitcher utilities={utilitiesSummary} currentId={utility.id} />
+
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
             <dt className="text-muted-foreground">Account reference</dt>
@@ -31,6 +41,15 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
           </dl>
           <EditUtilityDialog utility={utility} schedule={schedule} />
         </div>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">Consumption</h2>
+          <ConsumptionChart
+            history={consumptionHistory.history}
+            monthly={consumptionHistory.monthly}
+            unit={utility.unit}
+          />
+        </section>
 
         {/* Mobile prioritizes quick entry; desktop prioritizes history — see MAD-92 in CLAUDE.md. */}
         <section className="order-1 md:order-2">
