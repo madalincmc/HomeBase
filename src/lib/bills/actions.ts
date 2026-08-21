@@ -98,6 +98,7 @@ export async function createBill(
     const household = await getOrCreateHousehold();
     const title = readRequiredString(formData, "title", "Title");
     const provider = readOptionalString(formData, "provider");
+    const category = readOptionalString(formData, "category");
     const amount = readAmount(formData);
     const currency = readRequiredString(formData, "currency", "Currency");
     const issueDate = readOptionalDate(formData, "issueDate", "Issue date");
@@ -120,6 +121,7 @@ export async function createBill(
         scheduleId,
         title,
         provider,
+        category,
         amount,
         currency,
         issueDate,
@@ -151,6 +153,7 @@ export async function updateBill(
 
     const title = readRequiredString(formData, "title", "Title");
     const provider = readOptionalString(formData, "provider");
+    const category = readOptionalString(formData, "category");
     const amount = readAmount(formData);
     const currency = readRequiredString(formData, "currency", "Currency");
     const issueDate = readOptionalDate(formData, "issueDate", "Issue date");
@@ -176,7 +179,18 @@ export async function updateBill(
 
     await db
       .update(bills)
-      .set({ title, provider, amount, currency, issueDate, dueDate, utilityId, scheduleId, updatedAt: new Date() })
+      .set({
+        title,
+        provider,
+        category,
+        amount,
+        currency,
+        issueDate,
+        dueDate,
+        utilityId,
+        scheduleId,
+        updatedAt: new Date(),
+      })
       .where(eq(bills.id, billId));
 
     revalidatePath("/bills");
@@ -227,6 +241,7 @@ export async function markBillPaid(
           scheduleId: bill.scheduleId,
           title: bill.title,
           provider: bill.provider,
+          category: bill.category,
           amount: bill.amount,
           currency: bill.currency,
           issueDate: null,

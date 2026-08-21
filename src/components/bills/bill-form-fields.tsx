@@ -10,6 +10,7 @@ export type BillFormUtilityOption = { id: string; type: string; provider: string
 export type BillFormDefaultValues = {
   title?: string;
   provider?: string | null;
+  category?: string | null;
   utilityId?: string | null;
   amount?: string;
   currency?: string;
@@ -37,6 +38,16 @@ export function BillFormFields({
       <Field>
         <FieldLabel htmlFor="provider">Provider</FieldLabel>
         <Input id="provider" name="provider" defaultValue={defaultValues?.provider ?? ""} />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="category">Category</FieldLabel>
+        <Input
+          id="category"
+          name="category"
+          placeholder="Utilities, Rent, Insurance…"
+          defaultValue={defaultValues?.category ?? ""}
+        />
+        <FieldDescription>Used to group spending in cost analytics — optional.</FieldDescription>
       </Field>
       <Field orientation="responsive">
         <FieldLabel htmlFor="amount">Amount</FieldLabel>

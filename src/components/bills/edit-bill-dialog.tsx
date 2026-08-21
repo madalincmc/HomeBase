@@ -85,6 +85,7 @@ export function EditBillDialog({
             defaultValues={{
               title: bill.title,
               provider: bill.provider,
+              category: bill.category,
               utilityId: bill.utilityId,
               amount: bill.amount,
               currency: bill.currency,
