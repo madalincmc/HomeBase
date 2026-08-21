@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "HomeBase",
   description: "A household operating system for utilities, bills, chores, and maintenance.",
+  // Emits mobile-web-app-capable, which (alongside the manifest's
+  // display: standalone) is what makes an iOS Home Screen icon open as a
+  // standalone web app instead of a plain Safari tab.
+  appleWebApp: {
+    capable: true,
+    title: "HomeBase",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

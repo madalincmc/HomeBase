@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/shell/page-header";
+import { NotificationTest } from "@/components/dev/notification-test";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { RepairsSection } from "@/components/dashboard/repairs-section";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
@@ -28,6 +29,10 @@ export default async function Home() {
         — pushing Upcoming/Overview/Recent Activity down one tier each.
       */}
       <div className="flex flex-col gap-4 pb-4 md:gap-6 md:pb-6">
+        {/* Temporary — notification delivery investigation. Remove once decided. */}
+        <div className="order-first pt-4">
+          <NotificationTest />
+        </div>
         <DashboardSection
           title="Today"
           items={buckets.dueToday}
