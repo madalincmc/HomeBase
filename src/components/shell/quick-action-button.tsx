@@ -21,17 +21,21 @@ export function QuickActionButton() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState<ActiveAction>(null);
   const [context, setContext] = useState<QuickActionContext>(EMPTY_CONTEXT);
-  const [loaded, setLoaded] = useState(false);
   const [, startTransition] = useTransition();
 
   function openMenu() {
     setMenuOpen(true);
-    if (!loaded) {
-      startTransition(async () => {
-        setContext(await getQuickActionContext());
-        setLoaded(true);
-      });
-    }
+    // Refetch on EVERY open, not just the first. This button lives in
+    // AppShell, which the root layout renders around every route, so it
+    // never unmounts during client-side navigation. Caching the first
+    // result meant a utility or room created afterwards stayed invisible
+    // here until a full page reload — "Add meter reading" would keep
+    // insisting there were no utilities yet. The notification bell already
+    // refetches on every open for exactly this reason.
+    // The previous context stays on screen meanwhile, so there's no flash.
+    startTransition(async () => {
+      setContext(await getQuickActionContext());
+    });
   }
 
   function selectAction(action: ActiveAction) {
