@@ -752,6 +752,53 @@ maintenance (and unlike utilities, which needed one for reading history), an inv
 CRUD lives directly on `/inventory` via Edit/Delete dialogs, since there's no sub-resource (like
 readings) that would justify a dedicated page.
 
+## Warranty tracking (Phase 3)
+
+`inventoryItems` gained two nullable date columns, `warrantyStartDate`/`warrantyExpirationDate`
+(migration `0006_blushing_odin.sql`) — independent of `purchaseDate`, since a warranty doesn't
+always start on the purchase date (registered separately, or an extended warranty added later).
+No separate warranty table: it's a 1:1 relationship with no history to preserve (unlike, say,
+`meter_readings`), so two columns is all this needs.
+
+**Reuses the dashboard/notification due-item pipeline instead of building a parallel one.**
+`getDueItems()` (MAD-91/MAD-98's shared "what's overdue/due today/upcoming" computation) gained a
+fifth `DueItemKind`, `"warranty"` — any inventory item with `warrantyExpirationDate` set is bucketed
+by the same `bucketOf()` logic bills/chores/maintenance/utilities already use, with `"overdue"`
+read as "already expired" (still useful — e.g. deciding whether a broken appliance is covered).
+This one addition is what makes warranties automatically surface on the Dashboard's Needs
+Attention/Upcoming sections *and* the Notification Center *and* trigger browser notifications, all
+via `syncNotifications()`'s existing generic sync loop — the same reason `notificationCategoryEnum`
+gained a matching `"warranty"` value (a straight `ALTER TYPE ... ADD VALUE`, applied cleanly).
+
+**Deliberately did *not* extend `HouseholdCategory`** (`src/lib/category.ts`, the History/Activity
+taxonomy) to add "warranty" alongside it, even though `DueItemKind` and `HouseholdCategory` were
+previously identical sets. Nothing is ever logged to `activities` when a warranty expires — it's a
+passive date crossing, not a completed action — so adding "Warranty" to History's category filter
+would add an option that can never have a matching row. Instead, `DashboardItemRow` defines its own
+small `ICON_BY_KIND` map that spreads `CATEGORY_ICON` and adds one extra `warranty: ShieldCheck`
+entry locally, keeping `category.ts` itself untouched. `getWarrantyStatus()`
+(`src/lib/inventory/warranty-status.ts`) also deliberately re-declares the 14-day window as a local
+constant rather than importing `getDueItems()`'s copy — that module imports `@/db`, and this one is
+written to stay client-safe if a live status preview is ever added (see the MAD-98 barrel-import
+note above).
+
+**"Link warranty documents and receipts" needed no new plumbing** — MAD-107 (document vault) and
+MAD-108 (inventory attachments + vault linking) already built both paths. The warranty section of
+the create/edit form just adds a one-line hint pointing at the existing attachment field and the
+vault, rather than a third linking mechanism.
+
+`WarrantyBadge` (`src/components/inventory/warranty-badge.tsx`) is the "add warranty information to
+relevant inventory detail views" piece — since inventory items have no per-item detail route
+(MAD-108), this renders inline on the `/inventory` list row itself, computed fresh from the stored
+date vs. today at read time (same `getBillDisplayStatus()`-style pattern as bills, no stored status
+column to go stale).
+
+Verified against seeded live data with three warranty states (expired, expiring within the 14-day
+window, and far in the future) — confirmed the badge variant/copy for all three, confirmed only the
+first two triggered notifications and dashboard entries (the far-future one correctly excluded),
+confirmed the bell notification linked back to `/inventory` and marked itself read, and confirmed
+the create/edit form's start-after-expiration validation rejects with a clear error.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

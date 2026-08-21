@@ -5,11 +5,17 @@ import { getOrCreateHousehold } from "@/lib/household";
 import { getDueItems, type DueItemKind } from "@/lib/dashboard/get-due-items";
 import type { DateOnly } from "@/lib/schedule";
 
-// The four kinds getDueItems() can produce map 1:1 onto notification
+// The five kinds getDueItems() can produce map 1:1 onto notification
 // categories — "general" is reserved for any future non-schedule-derived
 // notification and is deliberately never touched by this sync (see the
 // filter below), so it can't be created or deleted here.
-const SCHEDULE_DERIVED_CATEGORIES = ["bill", "chore", "maintenance", "utility"] as const satisfies readonly DueItemKind[];
+const SCHEDULE_DERIVED_CATEGORIES = [
+  "bill",
+  "chore",
+  "maintenance",
+  "utility",
+  "warranty",
+] as const satisfies readonly DueItemKind[];
 
 function dueDateToTimestamp(dueDate: DateOnly): Date {
   return new Date(`${dueDate}T00:00:00.000Z`);

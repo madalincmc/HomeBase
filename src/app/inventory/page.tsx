@@ -4,10 +4,11 @@ import { CreateInventoryItemDialog } from "@/components/inventory/create-invento
 import { EditInventoryItemDialog } from "@/components/inventory/edit-inventory-item-dialog";
 import { DeleteInventoryItemDialog } from "@/components/inventory/delete-inventory-item-dialog";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
+import { WarrantyBadge } from "@/components/inventory/warranty-badge";
 import { AttachmentList } from "@/components/attachments/attachment-list";
 import { getInventoryItems, getInventoryCategories } from "@/lib/inventory/get-inventory";
 import { getHouseholdRooms } from "@/lib/rooms/get-rooms";
-import { formatDateOnlyLabel } from "@/lib/schedule";
+import { formatDateOnlyLabel, todayDateOnly } from "@/lib/schedule";
 
 // Reads live household data — see the MAD-91 note in CLAUDE.md.
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function InventoryPage({
     getInventoryCategories(),
     getHouseholdRooms(),
   ]);
+  const today = todayDateOnly();
 
   return (
     <>
@@ -54,6 +56,7 @@ export default async function InventoryPage({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{item.name}</span>
                   {item.category && <Badge variant="secondary">{item.category}</Badge>}
+                  <WarrantyBadge expirationDate={item.warrantyExpirationDate} today={today} />
                 </div>
                 <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                   {roomName && <span>{roomName}</span>}

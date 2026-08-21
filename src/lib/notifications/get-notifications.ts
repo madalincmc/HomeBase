@@ -34,6 +34,8 @@ function hrefFor(category: string, relatedEntityId: string | null): Route | null
       return "/maintenance";
     case "utility":
       return `/utilities/${relatedEntityId}` as Route;
+    case "warranty":
+      return "/inventory";
     default:
       return null;
   }

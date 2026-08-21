@@ -80,6 +80,8 @@ export function EditInventoryItemDialog({
               purchaseDate: item.purchaseDate,
               price: item.price,
               roomId: item.roomId,
+              warrantyStartDate: item.warrantyStartDate,
+              warrantyExpirationDate: item.warrantyExpirationDate,
             }}
           />
           {attachments.length > 0 && (

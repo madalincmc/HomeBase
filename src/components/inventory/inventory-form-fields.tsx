@@ -1,4 +1,4 @@
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldLabel, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
@@ -13,6 +13,8 @@ export type InventoryFormDefaultValues = {
   purchaseDate?: string | null;
   price?: string | null;
   roomId?: string | null;
+  warrantyStartDate?: string | null;
+  warrantyExpirationDate?: string | null;
 };
 
 export function InventoryFormFields({
@@ -82,6 +84,28 @@ export function InventoryFormFields({
           inputMode="decimal"
           defaultValue={defaultValues?.price ?? ""}
         />
+      </Field>
+      <Field orientation="responsive">
+        <FieldLabel htmlFor="warrantyStartDate">Warranty start</FieldLabel>
+        <Input
+          id="warrantyStartDate"
+          name="warrantyStartDate"
+          type="date"
+          defaultValue={defaultValues?.warrantyStartDate ?? ""}
+        />
+      </Field>
+      <Field orientation="responsive">
+        <FieldLabel htmlFor="warrantyExpirationDate">Warranty expiration</FieldLabel>
+        <Input
+          id="warrantyExpirationDate"
+          name="warrantyExpirationDate"
+          type="date"
+          defaultValue={defaultValues?.warrantyExpirationDate ?? ""}
+        />
+        <FieldDescription>
+          Attach the warranty card or receipt below, or link a fuller document from the vault
+          afterward.
+        </FieldDescription>
       </Field>
     </FieldGroup>
   );

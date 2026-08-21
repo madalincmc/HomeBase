@@ -1,11 +1,11 @@
 import type { Route } from "next";
-import { eq, and, ne, inArray, desc } from "drizzle-orm";
+import { eq, and, ne, inArray, desc, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
-import { bills, chores, maintenanceItems, taskOccurrences, utilities, meterReadings, schedules, rooms } from "@/db/schema";
+import { bills, chores, maintenanceItems, taskOccurrences, utilities, meterReadings, schedules, rooms, inventoryItems } from "@/db/schema";
 import { computeNextOccurrence, todayDateOnly, type DateOnly } from "@/lib/schedule";
 import { getOrCreateHousehold } from "@/lib/household";
 
-export type DueItemKind = "bill" | "chore" | "maintenance" | "utility";
+export type DueItemKind = "bill" | "chore" | "maintenance" | "utility" | "warranty";
 export type DueBucket = "overdue" | "dueToday" | "upcoming";
 
 export type DueItem = {
@@ -21,10 +21,13 @@ export type DueItem = {
 const UPCOMING_WINDOW_DAYS = 14;
 // Utility items link to their specific /utilities/[id] page instead — computed
 // per-item below, since (unlike these three) that route actually exists.
+// Warranty items link to /inventory — like bills/chores/maintenance, there's
+// no per-item detail route (see the MAD-108 note in CLAUDE.md).
 const HREF_BY_KIND: Record<Exclude<DueItemKind, "utility">, Route> = {
   bill: "/bills",
   chore: "/tasks",
   maintenance: "/maintenance",
+  warranty: "/inventory",
 };
 
 function bucketOf(dueDate: DateOnly, today: DateOnly, windowEnd: DateOnly): DueBucket | null {
@@ -157,6 +160,25 @@ export async function getDueItems(): Promise<DueItem[]> {
         href: `/utilities/${utility.id}`,
       });
     }
+  }
+
+  // Warranties: any inventory item with an expiration date set — "overdue"
+  // here means the warranty has already lapsed, which is still useful
+  // context (e.g. deciding whether a broken appliance is covered), so it
+  // reuses the same overdue/dueToday/upcoming bucketing as everything else
+  // rather than inventing separate warranty terminology.
+  const warrantyItems = await db
+    .select({ id: inventoryItems.id, name: inventoryItems.name, expirationDate: inventoryItems.warrantyExpirationDate })
+    .from(inventoryItems)
+    .where(and(eq(inventoryItems.householdId, household.id), isNotNull(inventoryItems.warrantyExpirationDate)));
+  for (const item of warrantyItems) {
+    place({
+      id: item.id,
+      kind: "warranty",
+      title: `${item.name} warranty`,
+      dueDate: item.expirationDate!,
+      href: HREF_BY_KIND.warranty,
+    });
   }
 
   items.sort((a, b) => a.dueDate.localeCompare(b.dueDate));

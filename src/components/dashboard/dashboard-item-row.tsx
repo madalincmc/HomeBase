@@ -1,8 +1,19 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateOnlyLabel } from "@/lib/schedule";
 import { CATEGORY_ICON } from "@/lib/category";
-import type { DashboardItem } from "@/lib/dashboard/get-dashboard-data";
+import type { DashboardItem, DashboardItemKind } from "@/lib/dashboard/get-dashboard-data";
+
+// Extends CATEGORY_ICON (from src/lib/category.ts) with "warranty" rather
+// than adding it to that shared map — CATEGORY_ICON also backs History's
+// category filter, and warranty expirations are never logged as an
+// activity, so History should never gain a "Warranty" option with no
+// possible matches. See the MAD-109 note in CLAUDE.md.
+const ICON_BY_KIND: Record<DashboardItemKind, typeof ShieldCheck> = {
+  ...CATEGORY_ICON,
+  warranty: ShieldCheck,
+};
 
 export function DashboardItemRow({
   item,
@@ -11,7 +22,7 @@ export function DashboardItemRow({
   item: DashboardItem;
   severity: "overdue" | "today" | "upcoming";
 }) {
-  const Icon = CATEGORY_ICON[item.kind];
+  const Icon = ICON_BY_KIND[item.kind];
 
   return (
     <Link
