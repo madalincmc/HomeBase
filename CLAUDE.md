@@ -707,6 +707,51 @@ what its own name says — a real place to browse/search — so it gets a normal
 entry and, on mobile, a `/more` entry alongside Maintenance/History/Settings, matching how every
 other genuine content section is reachable.
 
+## Home inventory (Phase 3)
+
+`inventory_items` is structurally closest to `maintenanceItems` (room association, free-text
+`category`) but has **no schedule/occurrence machinery at all** — it's a static asset record
+(name, brand, model, serial number, purchase date, price), not a recurring template, so none of
+the `schedules`/`task_occurrences` engine applies here.
+
+**`attachments` gained a fourth parent column** (`inventoryItemId`), extending the existing
+exactly-one-parent CHECK constraint from three cases to four (migration `0005_woozy_scalphunter.sql`
+drops and recreates the constraint) — the most direct way to satisfy "attach photos, receipts and
+manuals" using the app's established real-FK attachment pattern, rather than routing everything
+through the document vault. **Attachment timing follows bills' pattern, not maintenance's**:
+inventory items attach a file at create *or* edit time (`CreateInventoryItemDialog`/
+`EditInventoryItemDialog`, both using the same two-step create-then-upload orchestration bills and
+documents already use), never at a "completion" event — there isn't one for a static record, unlike
+a maintenance item's schedule-driven occurrences. Multiple files (a photo *and* a receipt *and* a
+manual) accumulate the same way bills do: one optional attachment per create/edit round-trip,
+building up a list over several edits, using the same `AttachmentList`/`AttachmentUploadField`
+components as everywhere else. `deleteInventoryItem` fetches and `deleteFile()`s the item's
+attachments before the DB delete — the same Blob-leak fix MAD-96 needed for
+`deleteMaintenanceItem`, applied here from day one instead of found as a bug later.
+
+**Closes the loop MAD-107 (document vault) explicitly left open.** That feature's schema comment
+called out "future inventory records" as the reason `documents.relatedEntityType`/
+`relatedEntityId` uses the unenforced pointer pattern instead of a real FK — now that
+`inventory_items` exists, `"inventory_item"` was added to `LINKABLE_TYPES` in
+`src/lib/documents/actions.ts`, plus the matching resolver in `getDocuments()`'s second-pass title
+lookup and a third `getLinkableEntities()` query — exactly the "no migration needed" extension that
+comment predicted. This means an inventory item can be documented two different ways depending on
+intent: a quick photo attached directly to the item (the `attachments` path above), or a fuller
+vault document (with its own category, search, and notes) optionally linked back to the item — both
+coexist, matching how maintenance items already work both ways.
+
+**New top-level nav item**, same reasoning as Documents (MAD-107) over Rooms (MAD-97): Inventory is
+a genuine browsable/searchable content area, not configuration, so it gets a normal
+`desktopNavItems` entry and a `/more` entry on mobile (placed between Maintenance and Documents in
+both).
+
+Search (`getInventoryItems()`) matches name, category, brand, model, or serial number via `ilike`;
+category and area filters are conditionally rendered only when at least one item has that data,
+same convention as every other filter bar in the app. No detail route — like bills/chores/
+maintenance (and unlike utilities, which needed one for reading history), an inventory item's full
+CRUD lives directly on `/inventory` via Edit/Delete dialogs, since there's no sub-resource (like
+readings) that would justify a dedicated page.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

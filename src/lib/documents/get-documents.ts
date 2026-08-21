@@ -1,6 +1,6 @@
 import { eq, and, or, ilike, isNotNull, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { documents, rooms, bills, maintenanceItems } from "@/db/schema";
+import { documents, rooms, bills, maintenanceItems, inventoryItems } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
 
 export type DocumentRow = typeof documents.$inferSelect & {
@@ -46,6 +46,9 @@ export async function getDocuments(filters: { q?: string; category?: string; roo
   const maintenanceIds = rows
     .filter((r) => r.document.relatedEntityType === "maintenance_item" && r.document.relatedEntityId)
     .map((r) => r.document.relatedEntityId!);
+  const inventoryIds = rows
+    .filter((r) => r.document.relatedEntityType === "inventory_item" && r.document.relatedEntityId)
+    .map((r) => r.document.relatedEntityId!);
 
   const billTitles = new Map<string, string>();
   if (billIds.length > 0) {
@@ -60,6 +63,14 @@ export async function getDocuments(filters: { q?: string; category?: string; roo
       .where(inArray(maintenanceItems.id, maintenanceIds));
     for (const i of itemRows) maintenanceTitles.set(i.id, i.title);
   }
+  const inventoryTitles = new Map<string, string>();
+  if (inventoryIds.length > 0) {
+    const itemRows = await db
+      .select({ id: inventoryItems.id, name: inventoryItems.name })
+      .from(inventoryItems)
+      .where(inArray(inventoryItems.id, inventoryIds));
+    for (const i of itemRows) inventoryTitles.set(i.id, i.name);
+  }
 
   return rows.map((r) => ({
     ...r.document,
@@ -69,7 +80,9 @@ export async function getDocuments(filters: { q?: string; category?: string; roo
         ? (billTitles.get(r.document.relatedEntityId ?? "") ?? null)
         : r.document.relatedEntityType === "maintenance_item"
           ? (maintenanceTitles.get(r.document.relatedEntityId ?? "") ?? null)
-          : null,
+          : r.document.relatedEntityType === "inventory_item"
+            ? (inventoryTitles.get(r.document.relatedEntityId ?? "") ?? null)
+            : null,
   }));
 }
 
@@ -85,16 +98,21 @@ export async function getDocumentCategories(): Promise<string[]> {
 export type LinkableEntities = {
   bills: { id: string; title: string }[];
   maintenanceItems: { id: string; title: string }[];
+  inventoryItems: { id: string; title: string }[];
 };
 
 export async function getLinkableEntities(): Promise<LinkableEntities> {
   const household = await getOrCreateHousehold();
-  const [billRows, itemRows] = await Promise.all([
+  const [billRows, itemRows, inventoryRows] = await Promise.all([
     db.select({ id: bills.id, title: bills.title }).from(bills).where(eq(bills.householdId, household.id)),
     db
       .select({ id: maintenanceItems.id, title: maintenanceItems.title })
       .from(maintenanceItems)
       .where(eq(maintenanceItems.householdId, household.id)),
+    db
+      .select({ id: inventoryItems.id, title: inventoryItems.name })
+      .from(inventoryItems)
+      .where(eq(inventoryItems.householdId, household.id)),
   ]);
-  return { bills: billRows, maintenanceItems: itemRows };
+  return { bills: billRows, maintenanceItems: itemRows, inventoryItems: inventoryRows };
 }
