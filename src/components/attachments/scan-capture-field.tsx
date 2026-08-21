@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useImperativeHandle, useRef, useState, useTransition } from "react";
-import { Camera, FileText, Loader2, RotateCcw, X } from "lucide-react";
+import { Camera, FileText, Loader2, RotateCcw, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,11 @@ export type ScanCaptureFieldHandle = {
 type ScanResult<T> = { success: true; data: T } | { success: false; error: string };
 
 // One-tap capture-and-scan field for the meter reading (MAD-104) and bill
-// (MAD-103) AI extraction flows: tapping the card opens the camera directly,
-// and the moment a photo lands, scanning kicks off on its own — no separate
-// "Scan with AI" button tap. The same <input name="file"> still carries the
-// photo into the surrounding form's FormData for the real attachment upload
+// (MAD-103) AI extraction flows: "Take photo" opens the camera directly and
+// "Upload photo" opens a normal file/gallery picker, and either way the
+// moment a photo lands, scanning kicks off on its own — no separate "Scan
+// with AI" button tap. The same <input name="file"> still carries the photo
+// into the surrounding form's FormData for the real attachment upload
 // afterward, so this is a drop-in replacement for AttachmentUploadField at
 // those two call sites specifically, not a general-purpose one: everywhere
 // else (documents, inventory, maintenance completion, repairs) has no
@@ -97,9 +98,25 @@ export function ScanCaptureField<T extends { confidence: "high" | "medium" | "lo
     });
   }
 
+  // The `capture` attribute is only read by the browser at the moment the
+  // picker opens, not reactively — so the same hidden input can serve both
+  // entry points by toggling it immediately before each click rather than
+  // needing two separate inputs (which would fight over the one "file" name
+  // the form reads on submit).
+  function openPicker(useCamera: boolean) {
+    const input = inputRef.current;
+    if (!input) return;
+    if (useCamera) {
+      input.setAttribute("capture", "environment");
+    } else {
+      input.removeAttribute("capture");
+    }
+    input.click();
+  }
+
   function handleRetake() {
     reset();
-    inputRef.current?.click();
+    openPicker(true);
   }
 
   return (
@@ -110,21 +127,26 @@ export function ScanCaptureField<T extends { confidence: "high" | "medium" | "lo
         name="file"
         id="file"
         accept={ACCEPTED_TYPES}
-        capture="environment"
         onChange={handleChange}
         className="sr-only"
       />
       {!file ? (
-        <label
-          htmlFor="file"
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-muted/30 px-4 py-7 text-center transition-colors hover:border-ring hover:bg-muted/50"
-        >
-          <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Camera className="size-5" />
-          </span>
-          <span className="text-sm font-medium">{label}</span>
-          <span className="text-xs text-muted-foreground">{hint}</span>
-        </label>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-input bg-muted/30 px-4 py-6 text-center">
+          <div>
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-xs text-muted-foreground">{hint}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => openPicker(true)} className="gap-1.5">
+              <Camera className="size-3.5" />
+              Take photo
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => openPicker(false)} className="gap-1.5">
+              <Upload className="size-3.5" />
+              Upload photo
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="relative flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-input bg-muted/40">
           {previewUrl ? (

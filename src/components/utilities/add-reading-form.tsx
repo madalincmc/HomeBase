@@ -75,7 +75,7 @@ export function AddReadingForm({
         <ScanCaptureField<ExtractedReading>
           ref={scanFieldRef}
           label="Scan the meter"
-          hint="Tap to take a photo — we'll read the value automatically"
+          hint="We'll read the value automatically"
           scanAction={(file) => {
             const formData = new FormData();
             formData.set("file", file);

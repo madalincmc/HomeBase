@@ -90,7 +90,7 @@ export function CreateBillDialog({
         <form action={handleSubmit} className="flex flex-col gap-4">
           <ScanCaptureField<ExtractedBill>
             label="Scan the bill"
-            hint="Tap to photograph or upload the bill — we'll fill in the details automatically"
+            hint="We'll fill in the details automatically"
             scanAction={(file) => {
               const formData = new FormData();
               formData.set("file", file);
