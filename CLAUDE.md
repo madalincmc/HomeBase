@@ -407,6 +407,44 @@ No pagination — `getActivityHistory` caps at 100 rows, same fixed-limit approa
 notification center. A full paginated/searchable history is Phase 2 analytics territory per the
 PRD's phase breakdown, not this issue's scope.
 
+## Global quick actions
+
+The mobile-only FAB (`QuickActionButton`, `md:hidden` — deliberately not duplicated on desktop,
+per the PRD's "desktop tells you what's happening, mobile helps you take care of it" split) opens
+a menu of the four creation flows, each backed by the household's **real** creation dialog —
+`AddReadingDialog` (new, wraps `AddReadingForm`), `CreateBillDialog`, `CreateChoreDialog`,
+`CreateMaintenanceDialog` — not a separate, parallel implementation. This satisfies "add a photo/
+document where applicable" automatically, since those dialogs already have the MAD-96 attachment
+field built in.
+
+**Every one of those three page-level dialogs gained optional `open`/`onOpenChange`/`trigger`
+props**, defaulting to their original uncontrolled, self-triggering behavior so every existing
+page usage (`/bills`, `/tasks`, `/maintenance`) is unaffected. The quick-actions menu renders
+controlled instances (`trigger={false}`) instead of duplicating their form logic. All four
+sub-dialogs are **always mounted** (each `open={active === "x"}`), not conditionally rendered per
+selection — mounting/unmounting on every menu pick would cut off Radix's own close animation.
+
+Meter readings are the one flow needing a parent (a specific utility) that the other three don't,
+so `AddReadingDialog` adds a picker sub-step: skipped automatically when exactly one utility
+exists, shown when there's more than one, and replaced with a "no utilities yet" message when
+there are none. Resetting that picker step on reopen uses the React-docs "adjust state during
+render" pattern (comparing current vs. previous `open` and calling `setState` inline, not in a
+`useEffect`) — the same class of fix the notification bell needed for `set-state-in-effect`, just
+solved differently here since this is a reopen-triggered reset rather than a mount-triggered fetch.
+`AddReadingForm` gained an optional `onSuccess` callback for this — the utility detail page's
+inline usage still just resets the form and stays put, but the dialog needs to close itself. This
+also fixed a latent inconsistency: the inline form used to reset itself even when the attachment
+upload step failed (discarding the values right when there was an error to review); it now matches
+every other create dialog's behavior of staying open with the error visible until the upload step
+actually succeeds.
+
+**Found and fixed a real, generally-applicable bug while verifying this in-browser**: `DialogContent`
+had no height cap or internal scroll, so on a short viewport a long form's submit button could
+render fully off-screen with no way to scroll it into view — reproduced with the bill quick-action
+form specifically, but it's a `src/components/ui/dialog.tsx` primitive fix, not scoped to quick
+actions, since any long dialog anywhere in the app could hit it on a small enough screen. Fixed by
+adding `max-h-[85vh] overflow-y-auto` to the content wrapper.
+
 ## Tracking
 
 Work is tracked in Linear under team **MAD** (MadalinProjects), project **HomeBase**

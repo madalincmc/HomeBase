@@ -16,8 +16,24 @@ import { createBill } from "@/lib/bills/actions";
 import { uploadAttachment } from "@/lib/attachments/actions";
 import { BillFormFields, type BillFormUtilityOption } from "./bill-form-fields";
 
-export function CreateBillDialog({ utilities }: { utilities: BillFormUtilityOption[] }) {
-  const [open, setOpen] = useState(false);
+export function CreateBillDialog({
+  utilities,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  trigger = true,
+}: {
+  utilities: BillFormUtilityOption[];
+  // Uncontrolled (self-triggering, own state) by default, matching every
+  // page that renders this directly. The quick-actions menu (MAD-100) needs
+  // a controlled instance with no built-in trigger, since the menu item
+  // itself is the trigger.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: boolean;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChangeProp ?? setOpenState;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -54,9 +70,11 @@ export function CreateBillDialog({ utilities }: { utilities: BillFormUtilityOpti
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button>Add bill</Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          <Button>Add bill</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add bill</DialogTitle>
