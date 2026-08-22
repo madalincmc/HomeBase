@@ -14,8 +14,23 @@ import {
 import { FieldError } from "@/components/ui/field";
 import { deleteChore } from "@/lib/chores/actions";
 
-export function DeleteChoreDialog({ choreId, title }: { choreId: string; title: string }) {
-  const [open, setOpen] = useState(false);
+export function DeleteChoreDialog({
+  choreId,
+  title,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  trigger = true,
+}: {
+  choreId: string;
+  title: string;
+  // See EditChoreDialog — same optional-controlled shape.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: boolean;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChangeProp ?? setOpenState;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -39,11 +54,13 @@ export function DeleteChoreDialog({ choreId, title }: { choreId: string; title: 
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Delete
-        </Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            Delete
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete &quot;{title}&quot;?</DialogTitle>

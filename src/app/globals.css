@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-work-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-heading: var(--font-manrope);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,14 +39,60 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Serene Home's shape scale is not a single multiplier ramp: it wants 8px on
+     controls (buttons and inputs, which read `rounded-lg` — i.e. --radius
+     itself) but 16px on the large surfaces that dominate this app (cards and
+     dialogs, which read `rounded-xl`). The stock Nova ramp put xl at 1.4x, so
+     no single --radius could satisfy both numbers. The multipliers below are
+     retuned to hit both off one base, and have to stay monotonic — raising xl
+     on its own would have pushed it past 2xl. */
+  --radius-sm: calc(var(--radius) * 0.5); /* 4px */
+  --radius-md: calc(var(--radius) * 0.75); /* 6px */
+  --radius-lg: var(--radius); /* 8px — buttons, inputs */
+  --radius-xl: calc(var(--radius) * 2); /* 16px — cards, dialogs */
+  --radius-2xl: calc(var(--radius) * 2.5); /* 20px */
+  --radius-3xl: calc(var(--radius) * 3); /* 24px */
+  --radius-4xl: calc(var(--radius) * 4); /* 32px — badges read as full pills */
 }
+
+/* Palette: "Serene Home", the design system attached to the Google Stitch
+   project this household's screens live in (see the Stitch section of
+   CLAUDE.md, and design/stitch/ for the pulled screens). Stitch publishes it
+   under Material-3 role names; the mapping onto shadcn's roles is:
+
+     background       <- surface                   #f8f9ff
+     card / popover   <- surface-container-lowest  #ffffff
+     foreground       <- on-surface                #0d1c2e
+     muted            <- surface-container-low     #eff4ff
+     muted-foreground <- on-surface-variant        #434655
+     accent           <- surface-container-high    #dce9ff
+     primary          <- primary-container         #2563eb
+     secondary        <- secondary-fixed           #c0e8ff
+     border / input   <- outline-variant           #c3c6d7
+     destructive      <- error                     #ba1a1a
+
+   primary maps to Stitch's *primary-container*, not its `primary` (#004ac6):
+   the screens fill high-emphasis buttons with #2563eb and keep the darker tone
+   for hover and progress fills, and the design doc names #2563eb as the brand
+   blue. It also carries both jobs shadcn asks of one --primary token — 5.17:1
+   against white as a filled button, 4.92:1 as text on the background — so a
+   single value still clears AA in both directions.
+
+   secondary takes Serene Home's *secondary-fixed* (#c0e8ff) rather than its
+   secondary-container (#7ed4fd), which is the one place the two systems'
+   roles genuinely disagree. Stitch spends that saturated sky blue on small
+   things — a chip, a single button — but shadcn's --secondary also backs the
+   selected sidebar item and the utility switcher, where a 200px block of it
+   became the loudest element on the page and read as an alert rather than a
+   selection. #c0e8ff is the same soft-blue family one step calmer, so it
+   still matches the design doc's "Soft Blue background with Dark Blue text"
+   at chip scale while surviving being enlarged (7.20:1 with #004d66 on top,
+   up from 5.65:1).
+
+   Everything here is an exact conversion of the hex above into oklch (the
+   unit the rest of this file and shadcn's own tokens already use), not an
+   eyeballed approximation. */
 
 :root {
   /* Mobile bottom nav = a row of tappable buttons sitting above a thin
@@ -66,72 +112,89 @@
   --mobile-nav-branding-height: calc(1.125rem + max(env(safe-area-inset-bottom), 0.375rem));
   --mobile-footer-height: calc(var(--mobile-nav-row-height) + var(--mobile-nav-branding-height));
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.983 0.008 278.6);
+  --foreground: oklch(0.223 0.041 253.9);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.223 0.041 253.9);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.223 0.041 253.9);
+  --primary: oklch(0.546 0.215 262.9);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.91 0.052 233.3);
+  --secondary-foreground: oklch(0.393 0.077 228.3);
+  --muted: oklch(0.967 0.016 266.3);
+  --muted-foreground: oklch(0.397 0.026 276.3);
+  --accent: oklch(0.931 0.033 261);
+  --accent-foreground: oklch(0.223 0.041 253.9);
+  --destructive: oklch(0.506 0.193 27.7);
+  --border: oklch(0.829 0.024 277.9);
+  --input: oklch(0.829 0.024 277.9);
+  --ring: oklch(0.546 0.215 262.9);
+
+  /* Charts stay a single-hue ramp running LIGHT -> DARK by index. Serene Home
+     defines no chart roles, so this is derived at the primary hue rather than
+     pulled from the palette — but the ordering is load-bearing, not cosmetic:
+     the consumption chart (src/components/utilities/consumption-chart.tsx)
+     picks chart-1 as its washed-out "gap" bar and a later index as the normal
+     bar, on the assumption that a lower index is lighter. Reversing this ramp
+     would silently invert that chart's meaning. See the MAD-105 note in
+     CLAUDE.md. */
+  --chart-1: oklch(0.914 0.041 276.6);
+  --chart-2: oklch(0.831 0.084 271.8);
+  --chart-3: oklch(0.688 0.145 266);
+  --chart-4: oklch(0.546 0.215 262.9);
+  --chart-5: oklch(0.459 0.203 261.4);
+
+  --radius: 0.5rem;
+  --sidebar: oklch(0.967 0.016 266.3);
+  --sidebar-foreground: oklch(0.223 0.041 253.9);
+  --sidebar-primary: oklch(0.546 0.215 262.9);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.931 0.033 261);
+  --sidebar-accent-foreground: oklch(0.223 0.041 253.9);
+  --sidebar-border: oklch(0.829 0.024 277.9);
+  --sidebar-ring: oklch(0.546 0.215 262.9);
 }
 
+/* Serene Home is published as a LIGHT-only theme, so this block is derived
+   from it rather than given: dark surfaces at the palette's own hue, with
+   primary/secondary swapped to the tones Stitch already exposes for exactly
+   that purpose (inverse-primary #b4c5ff, on-secondary-container #005b78).
+   Nothing in src/ applies the .dark class today — there is no theme provider
+   or toggle — so this is kept coherent for whenever one is added, not because
+   it is currently reachable. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.21 0.03 256);
+  --foreground: oklch(0.957 0.02 264.5);
+  --card: oklch(0.26 0.032 256);
+  --card-foreground: oklch(0.957 0.02 264.5);
+  --popover: oklch(0.26 0.032 256);
+  --popover-foreground: oklch(0.957 0.02 264.5);
+  --primary: oklch(0.831 0.084 271.8);
+  --primary-foreground: oklch(0.229 0.101 261.3);
+  --secondary: oklch(0.44 0.086 228.4);
+  --secondary-foreground: oklch(0.831 0.101 230.3);
+  --muted: oklch(0.3 0.03 256);
+  --muted-foreground: oklch(0.72 0.028 270);
+  --accent: oklch(0.32 0.04 258);
+  --accent-foreground: oklch(0.957 0.02 264.5);
+  --destructive: oklch(0.838 0.089 26.8);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.688 0.145 266);
+  --chart-1: oklch(0.914 0.041 276.6);
+  --chart-2: oklch(0.831 0.084 271.8);
+  --chart-3: oklch(0.688 0.145 266);
+  --chart-4: oklch(0.546 0.215 262.9);
+  --chart-5: oklch(0.459 0.203 261.4);
+  --sidebar: oklch(0.26 0.032 256);
+  --sidebar-foreground: oklch(0.957 0.02 264.5);
+  --sidebar-primary: oklch(0.831 0.084 271.8);
+  --sidebar-primary-foreground: oklch(0.229 0.101 261.3);
+  --sidebar-accent: oklch(0.32 0.04 258);
+  --sidebar-accent-foreground: oklch(0.957 0.02 264.5);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.688 0.145 266);
 }
 
 @layer base {

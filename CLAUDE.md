@@ -43,6 +43,10 @@ this was set up. Icon library is Lucide (`lucide-react`); fonts are Geist Sans/M
 `next/font`. Component tokens (color, radius) live in `src/app/globals.css`; add new primitives
 with `npx shadcn@latest add <name>`.
 
+The **palette and typography are no longer Nova's neutrals** — they were swapped for the
+*Serene Home* design system pulled from Stitch; see "Serene Home theme" below. Nova is still the
+structural preset (which primitives exist, how they compose); only the tokens changed.
+
 Available primitives: `button`, `card`, `badge`, `dialog`, `navigation-menu`, `input`,
 `textarea`, `label`, `separator`. Forms use `field` (`Field`, `FieldLabel`, `FieldDescription`,
 `FieldError`, `FieldGroup`, etc.) — this shadcn version replaced the old react-hook-form-bound
@@ -237,6 +241,41 @@ show up anywhere.
 
 Delete requires confirmation (`DeleteChoreDialog`) since it's destructive and takes the chore's
 completion history with it (`task_occurrences` cascade-deletes via the FK from MAD-87).
+
+**The `/tasks` row is `ChoreCard` (`src/components/chores/chore-card.tsx`), not inline JSX in the
+page.** Reported as "the buttons for each task are messy": the row used to render four
+equal-weight outline/solid buttons (Skip, Complete, Edit, Delete) plus a bare "Due …" string, all
+in one flex row that wrapped onto two ragged lines below `md` — nothing shared an alignment axis,
+and destructive Delete sat at the same visual weight as the everyday Complete.
+
+- **Edit and Delete moved into an overflow `⋯` menu** (`dropdown-menu`, added for this — the first
+  use of that primitive in the repo). That is what actually fixes the mess: it removes two of the
+  four buttons from the main flow and demotes the rare/destructive pair below the daily ones,
+  leaving Skip + Complete as the only visible actions.
+- **`EditChoreDialog`/`DeleteChoreDialog` gained the optional `open`/`onOpenChange`/`trigger`
+  props** `CreateChoreDialog` has had since MAD-100, defaulting to their original uncontrolled
+  self-triggering behaviour so any other call site is unaffected. The card renders controlled
+  instances (`trigger={false}`) because the menu item is now the trigger. Both stay **always
+  mounted** rather than rendered per selection, same reason as the quick-actions menu — mounting
+  on selection cuts off Radix's close animation.
+- **Skip/Complete are `flex-1` below `md`, intrinsic width at `md`+**, so on a phone they split the
+  row into two equal wide tap targets and on desktop they sit against the right edge. Verified at
+  a real 390px card width: all three controls land on one row at the same offset, Skip and
+  Complete are 156px each, and `⋯` sits 16px off the right edge.
+- **The due date left the button row** and became the head of the metadata line (calendar icon,
+  `·`-separated from room/assignee/duration/last-done), styled `text-destructive` when
+  `scheduledFor < todayDateOnly()` — derived at render, never stored, same convention as
+  `getBillDisplayStatus()`.
+- When a chore has no pending occurrence there are no Skip/Complete buttons, so the card renders a
+  `flex-1` spacer in their place; without it `⋯` would slide left and break alignment with every
+  other row. Confirmed the spacer holds `⋯` at the identical offset.
+
+`formatDateOnlyLabel` is called on the **server** and passed down as a preformatted `dueLabel` —
+it pins to UTC deliberately, and reformatting inside the Client Component would reintroduce
+exactly the local-timezone drift the `DateOnly` helpers exist to prevent.
+
+`/maintenance` still uses the older inline four-button layout; it was deliberately left alone
+rather than changed unasked, and is the obvious next candidate if this shape proves out.
 
 ## Maintenance
 
@@ -1118,6 +1157,92 @@ and normalized correctly), submitted a second round, and confirmed each point's 
 computed correctly against only its own history (not the others') — then confirmed deleting a
 point unassigned its readings (`meter_point_id` → `null`) rather than deleting them, and confirmed
 the FAB's water-reading flow shows the same per-point fields as the full page.
+
+## Google Stitch (design source)
+
+The household's UI designs live in a Google Stitch project, **"Home Management Hub"**
+(`10476742793598613487`) — a *Serene Home* design system (soft blue palette, high-legibility
+typography) plus screens for the dashboard, Utility & Meter Readings, and a Maintenance Hub.
+Stitch is a **design source, not a runtime dependency**: nothing in the deployed app calls it, and
+no Stitch credential belongs in Vercel. It is developer tooling only.
+
+**`.mcp.json` wires Claude Code to Stitch's hosted MCP server** (`https://stitch.googleapis.com/mcp`),
+reading the credential from `${STITCH_API_KEY}` so the key itself never enters the repo. Create the
+key in Stitch (profile picture → Stitch settings → API key → Create key) and set it as a real
+environment variable — `.env.local` will **not** work here, since that file is loaded by Next.js,
+not by the MCP client.
+
+**Do not reach for `npx @google/stitch-mcp` — that package does not exist** (verified against the
+npm registry; it 404s, despite being widely cited in blog posts and third-party guides). The two
+real integration points are the hosted MCP endpoint above and **`@google/stitch-sdk`** on npm,
+which authenticates via the same `STITCH_API_KEY` and can read an existing project without
+creating anything: `stitch.project(id).screens()`, then `screen.getHtml()` / `screen.getImage()`.
+
+Useful specifics, confirmed by probing the endpoint directly:
+
+- `initialize` and `tools/list` answer **unauthenticated**; every tool that touches user data
+  returns `Request is missing required authentication credential`. So "the MCP server connected
+  fine" is not evidence the key works — call `list_projects` to actually prove it.
+- 15 tools. Reads: `list_projects`, `get_project`, `list_screens`, `get_screen`,
+  `list_design_systems`. **Writes, which are destructive and easy to fire by accident:**
+  `delete_project`, `edit_screens`, `generate_screen_from_text`, `generate_variants`,
+  `update_design_system`, `apply_design_system`, `create_design_system*`, `upload_design_md`,
+  `create_project`. Connecting this server grants write access to the household's real Stitch
+  projects — treat `edit_screens`/`delete_project` as confirm-first, the same way any other
+  outward-facing mutation is treated.
+- `list_screens` wants a bare `projectId` with no `projects/` prefix; `get_project` wants the
+  full resource name (`projects/<id>`). `get_screen` wants `projects/<id>/screens/<screenId>`.
+
+**The Stitch web app renders inside a cross-origin iframe**, so screens cannot be scraped from the
+page DOM and the canvas only shows readable detail when zoomed. Pulling HTML through the MCP
+server or the SDK is the only practical way to get the designs into this repo — don't waste time
+driving the canvas UI.
+
+**The four screens are pulled into `design/stitch/`** (HTML + full-resolution PNG per screen,
+plus a `README.md` manifest with the screen ids and re-pull instructions). Both `downloadUrl`s
+`list_screens` returns are plain unauthenticated GETs, so `curl -L` is enough once you have the
+listing — append `=s0` to the `lh3.googleusercontent.com` screenshot URL for full resolution
+rather than a thumbnail. The HTML is **not** portable into the app as-is (Tailwind via CDN,
+Material Symbols icons where this app uses Lucide, placeholder 2023 data); its useful content is
+the `tailwind.config` token block every screen inlines.
+
+The *Serene Home* **theme has been adopted** (see below); the screens themselves are still
+deliberately not implemented as routes.
+
+## Serene Home theme
+
+Swapped `src/app/globals.css` from Nova's neutral `oklch(L 0 0)` tokens to Serene Home's blue
+palette, plus its shape and type scale. **No component was restyled** — this is a token swap, so
+every existing `bg-primary`/`text-muted-foreground`/`rounded-xl` in the app just resolves
+differently. The role-by-role mapping and the reasoning for the two non-obvious choices live in
+comments in `globals.css` itself, not here; the short version:
+
+- **`--primary` is Stitch's `primary-container` (#2563eb), not its `primary` (#004ac6).** The
+  screens fill high-emphasis buttons with #2563eb and keep the darker tone for hover/progress
+  fills. One token has to serve both `bg-primary` and `text-primary`; #2563eb clears AA in both
+  directions (5.17:1 as a filled button, 4.92:1 as text).
+- **`--secondary` is `secondary-fixed` (#c0e8ff), not `secondary-container` (#7ed4fd)** — the one
+  place the two systems' roles genuinely disagree. Stitch spends the saturated sky blue on chips
+  and single buttons; shadcn's `--secondary` also backs the selected sidebar item, where a 200px
+  block of it read as an alert rather than a selection. Caught by looking at the rendered page,
+  not by any check.
+- **The radius ramp is retuned, not just rebased.** Serene Home wants 8px controls *and* 16px
+  cards; buttons/inputs read `rounded-lg` (= `--radius`) and cards/dialogs read `rounded-xl`, and
+  Nova's 1.4x xl multiplier made those two numbers unreachable from one base. The multipliers in
+  `@theme inline` must stay monotonic — raising xl alone pushes it past 2xl.
+- **Chart tokens stay a light→dark ramp by index**, now single-hue blue instead of gray. This is
+  load-bearing: `consumption-chart.tsx` picks `chart-1` as its faded "gap" bar on the assumption
+  that a lower index is lighter (MAD-105). Verified the rendered lightnesses still descend
+  (89.7% → 34.7%) after the swap.
+- **Fonts**: Manrope (`--font-heading`, already wired to `CardTitle`/`DialogTitle`) and Work Sans
+  (`--font-sans`) via `next/font`, replacing Geist Sans. Geist Mono stays — Serene Home names no
+  monospace face, and it is only used for the error digest and chart tooltip figures.
+- **The `.dark` block is derived, not given** — Serene Home is published LIGHT-only. Nothing in
+  `src/` applies the `.dark` class (no theme provider, no toggle), so it is kept coherent for
+  whenever one is added rather than because it is currently reachable.
+
+An incidental win: `--muted-foreground` went from 4.6:1 to 8.9:1 against the background, because
+Serene Home's `on-surface-variant` is far darker than Nova's mid-gray.
 
 ## Tracking
 

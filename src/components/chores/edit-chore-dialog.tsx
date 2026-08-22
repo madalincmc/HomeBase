@@ -25,13 +25,24 @@ export function EditChoreDialog({
   schedule,
   rooms,
   dueDate,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  trigger = true,
 }: {
   chore: Chore;
   schedule: Schedule | null;
   rooms: ChoreFormRoomOption[];
   dueDate: string;
+  // Uncontrolled (self-triggering, own state) by default, same shape as
+  // CreateChoreDialog (MAD-100): the chore card renders this from inside an
+  // overflow menu, where the menu item is the trigger.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChangeProp ?? setOpenState;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -61,11 +72,13 @@ export function EditChoreDialog({
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            Edit
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit chore</DialogTitle>

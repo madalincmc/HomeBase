@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Home Harmony - Chores</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary": "#525657",
+                    "on-primary-container": "#eeefff",
+                    "surface-bright": "#f8f9ff",
+                    "inverse-primary": "#b4c5ff",
+                    "on-secondary-container": "#005b78",
+                    "on-secondary-fixed-variant": "#004d66",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#c0e8ff",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "outline": "#737686",
+                    "surface-container-high": "#dce9ff",
+                    "tertiary-container": "#6b6e70",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#0053db",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d5e3fc",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "outline-variant": "#c3c6d7",
+                    "primary-fixed": "#dbe1ff",
+                    "on-tertiary-container": "#eff1f3",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "secondary": "#006686",
+                    "primary-container": "#2563eb",
+                    "secondary-fixed-dim": "#7bd1fa",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed": "#e0e3e5",
+                    "on-background": "#0d1c2e",
+                    "surface-container-low": "#eff4ff",
+                    "on-secondary-fixed": "#001e2b",
+                    "primary": "#004ac6",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "inverse-surface": "#233144",
+                    "on-surface-variant": "#434655",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#ccdbf3",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#191c1e",
+                    "surface-variant": "#d5e3fc",
+                    "background": "#f8f9ff",
+                    "on-primary-fixed": "#00174b",
+                    "surface-container": "#e6eeff",
+                    "on-surface": "#0d1c2e",
+                    "secondary-container": "#7ed4fd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "container-max": "1200px",
+                    "margin-mobile": "16px",
+                    "sm": "8px",
+                    "base": "4px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "gutter": "20px",
+                    "xl": "40px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Manrope"],
+                    "headline-lg-mobile": ["Manrope"],
+                    "headline-sm": ["Manrope"],
+                    "headline-md": ["Manrope"],
+                    "label-md": ["Work Sans"],
+                    "body-sm": ["Work Sans"],
+                    "body-md": ["Work Sans"],
+                    "label-sm": ["Work Sans"],
+                    "body-lg": ["Work Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["26px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+          font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Checkbox */
+        .chore-checkbox {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid theme('colors.outline');
+            border-radius: 50%;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .chore-checkbox::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em theme('colors.on-primary');
+            background-color: theme('colors.primary');
+            transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        .chore-checkbox:checked {
+            background-color: theme('colors.primary');
+            border-color: theme('colors.primary');
+        }
+
+        .chore-checkbox:checked::before {
+            transform: scale(1);
+        }
+        
+        .chore-item:has(input:checked) .chore-text {
+            text-decoration: line-through;
+            color: theme('colors.outline');
+        }
+        
+        /* Progress Bar Animation */
+        @keyframes fillProgress {
+            from { width: 0; }
+            to { width: var(--target-width); }
+        }
+        .progress-fill {
+            animation: fillProgress 1s ease-out forwards;
+        }
+        
+        /* Ambient Shadow */
+        .shadow-ambient-1 {
+            box-shadow: 0px 2px 4px rgba(37, 99, 235, 0.04), 0px 4px 12px rgba(37, 99, 235, 0.04);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md pb-24">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface dark:bg-on-background shadow-sm">
+<div class="flex items-center justify-between px-margin-mobile h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden flex-shrink-0 ring-2 ring-transparent">
+<img class="w-full h-full object-cover" data-alt="A close up, high resolution portrait of a young professional smiling softly. The lighting is bright and even, conveying a clean, modern aesthetic suitable for a high-end application profile avatar. The background is a soft, indistinct light color." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhd6JC28vq6iZp6lbo1iVPOMVENCSAYgtaP0LkbqZF3gTP6AkkRRAQLvGrrem36L-z3r-Z1D4RIb4VPdCCmGfgUqh9gdoiP-E1JZGeoqoOuLhWg1LTl-z3UFGIwsD8KzCBn_YTS1mPKfazKqt6JtgQ_erzch2DSblBobi2uDYGT2nf5vC1Mv7uu9KgJXnNsWkfKYAm9o8hRXx_4U8Vx831gDOG7eYKb5D2T_Cx2Mvx4SoYDGGs-y07QA"/>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Home Harmony</h1>
+</div>
+<button aria-label="notifications" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile pt-lg pb-xl space-y-xl">
+<!-- Header & Progress Section -->
+<section class="space-y-md">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background">Chores</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Keep your space running smoothly.</p>
+</div>
+<!-- Progress Module -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-ambient-1 border border-outline-variant/30 flex flex-col gap-sm">
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Today's Progress</span>
+<div class="font-headline-md text-headline-md text-primary mt-xs">65%</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">5 of 8 completed</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-sm">
+<div class="h-full bg-primary rounded-full progress-fill" style="--target-width: 65%;"></div>
+</div>
+</div>
+</section>
+<!-- Tabbed Interface -->
+<section class="space-y-lg">
+<div class="flex p-1 bg-surface-container-low rounded-lg w-full max-w-md">
+<button aria-selected="true" class="flex-1 py-2 font-label-md text-label-md text-center rounded-md bg-surface-container-lowest text-primary shadow-sm transition-all">Daily</button>
+<button aria-selected="false" class="flex-1 py-2 font-label-md text-label-md text-center rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all">Weekly</button>
+<button aria-selected="false" class="flex-1 py-2 font-label-md text-label-md text-center rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all">Monthly</button>
+</div>
+<!-- Chore List -->
+<div class="space-y-sm">
+<!-- Chore Item 1 (Completed) -->
+<label class="chore-item flex items-center p-md bg-surface-container-lowest rounded-xl shadow-ambient-1 border border-outline-variant/20 hover:border-primary-container/30 transition-colors cursor-pointer group">
+<div class="flex-shrink-0 mr-md">
+<input checked="" class="chore-checkbox" type="checkbox"/>
+</div>
+<div class="flex-grow min-w-0">
+<p class="chore-text font-body-md text-body-md text-on-background truncate transition-colors">Empty dishwasher</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Morning
+                            </span>
+</div>
+</div>
+<div class="flex-shrink-0 ml-md flex items-center gap-xs">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden ring-1 ring-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A tiny profile picture of a golden retriever dog. The image is bright and cheerful, reflecting a modern, humanist design style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr0lJ8vuM-fuSUsv8jr8fnBbskBWka4b08A83kYXTP8rZTajYocRQzC4eubL5bZ-ZeL9Wlg9o6I0ZilP8m3wvNf7gXuwiLNhIgi10DOCy6z_oBS-CyIV_Rhb7HUvWRaweau9kcEK8nzP7LdUWLqkKF3Y-KnnGVe4yUnYgbQKi3_K_m86pP0hECH1BxjxKJZuSAvY_ktZyN2TYdBrWSblNAOksLs1wRgb8rIDjAPbmGTH5CGTgnFM4iVA"/>
+</div>
+</div>
+</label>
+<!-- Chore Item 2 (High Priority, Pending) -->
+<label class="chore-item flex items-center p-md bg-surface-container-lowest rounded-xl shadow-ambient-1 border border-outline-variant/20 hover:border-primary-container/30 transition-colors cursor-pointer group">
+<div class="flex-shrink-0 mr-md">
+<input class="chore-checkbox" type="checkbox"/>
+</div>
+<div class="flex-grow min-w-0">
+<p class="chore-text font-body-md text-body-md text-on-background truncate transition-colors">Take out trash</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm">High Priority</span>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Evening
+                            </span>
+</div>
+</div>
+<div class="flex-shrink-0 ml-md flex items-center gap-xs">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden ring-1 ring-outline-variant/30 text-center leading-6 text-[10px] font-bold text-on-surface-variant">
+                            JD
+                        </div>
+</div>
+</label>
+<!-- Chore Item 3 (Pending) -->
+<label class="chore-item flex items-center p-md bg-surface-container-lowest rounded-xl shadow-ambient-1 border border-outline-variant/20 hover:border-primary-container/30 transition-colors cursor-pointer group">
+<div class="flex-shrink-0 mr-md">
+<input class="chore-checkbox" type="checkbox"/>
+</div>
+<div class="flex-grow min-w-0">
+<p class="chore-text font-body-md text-body-md text-on-background truncate transition-colors">Wipe down kitchen counters</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">kitchen</span> Kitchen
+                            </span>
+</div>
+</div>
+<div class="flex-shrink-0 ml-md flex items-center gap-xs">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden ring-1 ring-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A small profile avatar showing a stylized, modern illustration of a houseplant. The colors are muted greens on a soft blue background, fitting a calm UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRYs7vThogxhUyKbJiMtc0_0ReoTvID1xW64j_DPfNIOh3AiZpe9tkDHlvMv5dyXCirffrgt9BlFJwBmA3XcaDtViC7OzpZY2kuCcHlo3T1v7LnsLrqXUsAYcKeMkw5B7IQ3QHpMjry_OaMOZ3cg_R00vLIl44fbkI2CRP5Hu1-067xhKwjrbPeQe2Y4nQBXqVZ-wQ_UYAYQdF2cldNqcarAdz3P1Vc-SssF2hGstOIa9SRCfsFt5huA"/>
+</div>
+</div>
+</label>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button aria-label="Add Chore" class="fixed right-margin-mobile bottom-[88px] md:bottom-lg w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-lg flex items-center justify-center hover:bg-on-primary-fixed-variant transition-colors active:scale-95 z-40">
+<span class="material-symbols-outlined fill">add</span>
+</button>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center py-2 px-2 bg-surface-container dark:bg-inverse-surface border-t border-outline-variant/10 z-50 rounded-t-xl shadow-[0_-2px_10px_rgba(37,99,235,0.06)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-label-sm text-label-sm">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">account_balance_wallet</span>
+<span class="font-label-sm text-label-sm">Utilities</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1 fill">checklist</span>
+<span class="font-label-sm text-label-sm">Chores</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home_repair_service</span>
+<span class="font-label-sm text-label-sm">Maintenance</span>
+</a>
+</nav>
+<script>
+        // Simple JS for tab switching visual (functional implementation would require state management)
+        document.querySelectorAll('button[aria-selected]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('button[aria-selected]').forEach(t => {
+                    t.setAttribute('aria-selected', 'false');
+                    t.className = 'flex-1 py-2 font-label-md text-label-md text-center rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all';
+                });
+                const clicked = e.target;
+                clicked.setAttribute('aria-selected', 'true');
+                clicked.className = 'flex-1 py-2 font-label-md text-label-md text-center rounded-md bg-surface-container-lowest text-primary shadow-sm transition-all';
+            });
+        });
+    </script>
+</body></html>

@@ -1,10 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Manrope, Work_Sans } from "next/font/google";
 import { AppShell } from "@/components/shell/app-shell";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Serene Home's dual-font strategy (see the palette comment in globals.css):
+// Manrope carries headings — it is wired to --font-heading, which CardTitle
+// and DialogTitle already read — and Work Sans carries body copy and the
+// dense numeric UI (meter readings, bill amounts, inventory rows) it was
+// picked for. Both are variable fonts, so no explicit weight list is needed.
+// Geist Mono stays: it is only used for the error digest and chart tooltip
+// figures, and Serene Home names no monospace face to replace it with.
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+});
+
+const workSans = Work_Sans({
+  variable: "--font-work-sans",
   subsets: ["latin"],
 });
 
@@ -39,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${workSans.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AppShell>{children}</AppShell>
