@@ -961,6 +961,50 @@ push's job alone.
   always just re-enabling from the bell. `push_subscriptions.lastNotifiedAt` shows whether a
   device has ever actually received anything.
 
+### Delivery state is confirmed against the server, never inferred from the browser
+
+Reported: a reminder that should have arrived on iOS never showed up in the system, but was
+sitting in the in-app bell when the app was opened.
+
+**Root cause was simply that `push_subscriptions` was empty** — no device had ever completed the
+subscribe step, so every cron slot composed a correct payload and delivered it to nobody. The
+in-app inbox kept working throughout because it is only a database read and never touches push.
+Nothing in the pipeline was broken; confirmed afterwards by subscribing a real iPhone and
+receiving a real push through the unchanged code path.
+
+**The actual defect was that this state was undetectable from inside the app**, and that is what
+got fixed:
+
+- **The bell used to derive "Daily reminders are on for this device" purely from the browser's own
+  `PushSubscription` object.** Those are two independent facts — the server row is pruned on a
+  404/410, a save can fail, a database can be reset — and when they diverged the UI confidently
+  reported reminders were on for a device the server had never heard of, offering only "Turn off".
+  `isEndpointSubscribed()` had been written for exactly this case and was **never called from
+  anywhere**. It is now `getSubscriptionStatus()`, called on mount, and it also returns
+  `lastNotifiedAt` so the bell can show when that device genuinely last received something.
+- **A browser subscription unknown to the server now self-heals** rather than surfacing an error:
+  the full subscription is already in hand, so `PushReminderControls` just re-saves it. Only a
+  failed re-save falls through to a visible "Reminders stopped working on this device" + Fix.
+- **`sendTestPush()` sends through the identical path the cron slots use.** Without it the only
+  way to learn whether delivery works was to wait for the next slot — a feedback loop measured in
+  hours, and the direct reason an unregistered device went unnoticed for a full day.
+- **`SendResult` gained `total`** (devices on file before sending). A bare `sent: 0` could not
+  distinguish "nobody is registered" from "tried and failed", which have completely different
+  fixes; the cron response now carries an explicit `warning` for the former, and
+  `sendPushToHousehold` logs a warning instead of returning that case silently.
+- **`checkPushSupport()`'s iOS branch was unreachable.** It probed `PushManager` before
+  `Notification`, but on iOS *both* are absent in an ordinary Safari tab — so the generic "Push
+  isn't available" always won and hid the only message that says what to do about it. The
+  iOS-outside-standalone check now runs first, via `display-mode: standalone` / `navigator.standalone`.
+
+**The generalisable rule: never let a client-side artefact stand in as proof of server state.**
+The browser holding a subscription object says nothing about whether the server can reach it, and
+a UI that conflates the two converts a recoverable problem into a silent one.
+
+Push state lives in `src/components/shell/push-reminder-controls.tsx` as an explicit state machine
+(`checking`/`unsupported`/`denied`/`off`/`on`/`stale`); `notification-bell.tsx` is now purely the
+in-app inbox.
+
 ## Mobile safe-area footer
 
 Reported: on mobile, the bottom nav labels sat low enough that the iOS home-indicator's own

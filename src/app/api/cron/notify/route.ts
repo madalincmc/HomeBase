@@ -52,7 +52,13 @@ export async function GET(request: NextRequest) {
     const result = await sendPushToHousehold(household.id, payload);
     // Echo what was actually sent — the endpoint is secret-protected, and it
     // makes Vercel's cron logs self-documenting when a reminder looks wrong.
-    return Response.json({ slot, ...result, title: payload.title, body: payload.body });
+    // `warning` calls out the case where there was genuinely something to
+    // say and nobody to say it to. That reads as an ordinary success
+    // otherwise, and it is by far the most common reason a reminder never
+    // shows up on a phone.
+    const warning =
+      result.total === 0 ? "No devices registered — enable reminders from the bell." : undefined;
+    return Response.json({ slot, ...result, warning, title: payload.title, body: payload.body });
   } catch (err) {
     console.error(`[cron:notify:${slot}] failed`, err);
     return Response.json({ error: "Send failed" }, { status: 500 });

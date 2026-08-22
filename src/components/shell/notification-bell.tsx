@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Bell, BellOff, Check } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -24,13 +24,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notifications/actions";
-import { savePushSubscription, deletePushSubscription } from "@/lib/push/actions";
-import {
-  checkPushSupport,
-  getExistingSubscription,
-  subscribeToPush,
-  serializeSubscription,
-} from "@/lib/push/client";
+import { PushReminderControls } from "./push-reminder-controls";
 import type { NotificationListItem } from "@/lib/notifications/get-notifications";
 
 const BUCKET_VARIANT = {
@@ -57,16 +51,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationListItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(() =>
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported"
-  );
   const [isPending, startTransition] = useTransition();
-  // Push subscription state is separate from `permission`: the two genuinely
-  // diverge — permission can be granted while this browser has no live
-  // subscription (row pruned after a 410, or never subscribed at all).
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushBusy, setPushBusy] = useState(false);
-  const [pushError, setPushError] = useState<string | null>(null);
 
   function refresh() {
     startTransition(async () => {
@@ -78,77 +63,11 @@ export function NotificationBell() {
 
   useEffect(() => {
     refresh();
-    getExistingSubscription()
-      .then((subscription) => setPushEnabled(Boolean(subscription)))
-      .catch(() => setPushEnabled(false));
   }, []);
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
     if (nextOpen) refresh();
-  }
-
-  async function handleEnablePush() {
-    setPushBusy(true);
-    setPushError(null);
-    try {
-      const support = checkPushSupport();
-      if (!support.supported) {
-        setPushError(support.reason);
-        return;
-      }
-
-      const result = await Notification.requestPermission();
-      setPermission(result);
-      if (result !== "granted") {
-        setPushError("Notifications are blocked for this site.");
-        return;
-      }
-
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) {
-        setPushError("Push isn't configured on the server.");
-        return;
-      }
-
-      const subscription = await subscribeToPush(vapidKey);
-      const serialized = serializeSubscription(subscription);
-      if (!serialized) {
-        setPushError("The browser returned an incomplete subscription.");
-        return;
-      }
-
-      const saved = await savePushSubscription(serialized);
-      if (!saved.success) {
-        setPushError(saved.error);
-        return;
-      }
-      setPushEnabled(true);
-    } catch (err) {
-      setPushError(err instanceof Error ? err.message : "Could not enable reminders.");
-    } finally {
-      setPushBusy(false);
-    }
-  }
-
-  async function handleDisablePush() {
-    setPushBusy(true);
-    setPushError(null);
-    try {
-      const subscription = await getExistingSubscription();
-      if (subscription) {
-        // Drop the server row first — if unsubscribing locally succeeded but
-        // the delete failed, the server would keep pushing to a dead endpoint
-        // until the next 410 prune.
-        await deletePushSubscription(subscription.endpoint);
-        await subscription.unsubscribe();
-      }
-      setPushEnabled(false);
-    } catch (err) {
-      setPushError(err instanceof Error ? err.message : "Could not turn off reminders.");
-    } finally {
-      setPushBusy(false);
-    }
   }
 
   function handleItemClick(item: NotificationListItem) {
@@ -198,31 +117,7 @@ export function NotificationBell() {
           )}
         </div>
 
-        {permission === "denied" ? (
-          <div className="mx-3 mt-2 flex items-center gap-2 rounded-md bg-muted px-2.5 py-2 text-xs text-muted-foreground">
-            <BellOff className="size-3.5 shrink-0" />
-            Notifications are blocked. Enable them in your browser&apos;s site settings.
-          </div>
-        ) : (
-          <div className="mx-3 mt-2 flex flex-col gap-1.5 rounded-md bg-muted px-2.5 py-2 text-xs text-muted-foreground">
-            <div className="flex items-center justify-between gap-2">
-              <span>
-                {pushEnabled
-                  ? "Daily reminders are on for this device."
-                  : "Get reminders even when HomeBase is closed."}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={pushBusy}
-                onClick={pushEnabled ? handleDisablePush : handleEnablePush}
-              >
-                {pushBusy ? "…" : pushEnabled ? "Turn off" : "Enable"}
-              </Button>
-            </div>
-            {pushError && <span className="text-destructive">{pushError}</span>}
-          </div>
-        )}
+        <PushReminderControls />
 
         <Separator className="mt-3" />
 
