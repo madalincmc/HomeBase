@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
 import { getOrCreateHousehold } from "@/lib/household";
-import { sendPushToHousehold } from "./send";
 
 export type PushActionResult = { success: true } | { success: false; error: string };
 
@@ -78,46 +77,4 @@ export async function getSubscriptionStatus(endpoint: string): Promise<Subscript
     .where(eq(pushSubscriptions.endpoint, endpoint));
 
   return { registered: Boolean(row), lastNotifiedAt: row?.lastNotifiedAt ?? null };
-}
-
-export type TestPushResult =
-  | { success: true; sent: number; pruned: number }
-  | { success: false; error: string };
-
-// Sends a real push through the exact same path the cron slots use, on
-// demand. Without this the only way to find out whether delivery works is to
-// wait for the next scheduled slot — a feedback loop measured in hours, and
-// the reason a device being unregistered went unnoticed for a full day.
-export async function sendTestPush(): Promise<TestPushResult> {
-  try {
-    const household = await getOrCreateHousehold();
-    const result = await sendPushToHousehold(household.id, {
-      title: "HomeBase test",
-      body: "Reminders are working. This is the only notification you asked for.",
-      url: "/",
-      // Deliberately not the "homebase-reminder" tag the slots use — a test
-      // shouldn't replace, or be replaced by, a genuine outstanding reminder.
-      tag: "homebase-test",
-    });
-
-    if (result.unconfigured) {
-      return { success: false, error: "Push isn't configured on the server." };
-    }
-    if (result.total === 0) {
-      return { success: false, error: "No devices are registered for reminders yet." };
-    }
-    // Every device was dead: the row(s) have just been pruned, so the honest
-    // answer is that this device needs re-enabling, not that sending failed.
-    if (result.sent === 0 && result.pruned > 0) {
-      return { success: false, error: "This device's subscription expired. Turn reminders off and on again." };
-    }
-    if (result.sent === 0) {
-      return { success: false, error: "The push service rejected the message. Try again shortly." };
-    }
-
-    return { success: true, sent: result.sent, pruned: result.pruned };
-  } catch (err) {
-    console.error("[push] test send failed", err);
-    return { success: false, error: "Could not send a test notification." };
-  }
 }

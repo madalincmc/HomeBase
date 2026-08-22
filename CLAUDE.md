@@ -985,9 +985,13 @@ got fixed:
 - **A browser subscription unknown to the server now self-heals** rather than surfacing an error:
   the full subscription is already in hand, so `PushReminderControls` just re-saves it. Only a
   failed re-save falls through to a visible "Reminders stopped working on this device" + Fix.
-- **`sendTestPush()` sends through the identical path the cron slots use.** Without it the only
-  way to learn whether delivery works was to wait for the next slot — a feedback loop measured in
-  hours, and the direct reason an unregistered device went unnoticed for a full day.
+- **The bell shows `lastNotifiedAt` ("Last delivered …") as its delivery evidence.** A
+  "Send test" button briefly existed alongside it and was **deliberately removed** — the bell is
+  an ambient status strip, not a diagnostics panel, and a button that fires a real notification at
+  the household is a strange thing to leave sitting in it permanently. The timestamp carries the
+  part that actually matters (has this device *ever* been reached, and when) without needing a
+  push to answer it. To force a send while debugging, hit the cron endpoint by hand — see the
+  operational notes above; there is intentionally no in-app equivalent.
 - **`SendResult` gained `total`** (devices on file before sending). A bare `sent: 0` could not
   distinguish "nobody is registered" from "tried and failed", which have completely different
   fixes; the cron response now carries an explicit `warning` for the former, and
