@@ -16,12 +16,26 @@ export function OccurrenceActions({ occurrenceId }: { occurrenceId: string }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    // flex-1 on mobile so Skip/Complete split the row into two equal, wide
+    // tap targets; intrinsic width on desktop, where the card is a single
+    // row and the buttons sit against the right edge.
+    <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-none">
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled={pending} onClick={() => handle(skipChoreOccurrence)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 md:flex-none"
+          disabled={pending}
+          onClick={() => handle(skipChoreOccurrence)}
+        >
           Skip
         </Button>
-        <Button size="sm" disabled={pending} onClick={() => handle(completeChoreOccurrence)}>
+        <Button
+          size="sm"
+          className="flex-1 md:flex-none"
+          disabled={pending}
+          onClick={() => handle(completeChoreOccurrence)}
+        >
           Complete
         </Button>
       </div>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Home Harmony - Maintenance Log</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Brand Anchors -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary": "#525657",
+                        "on-primary-container": "#eeefff",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-primary": "#b4c5ff",
+                        "on-secondary-container": "#005b78",
+                        "on-secondary-fixed-variant": "#004d66",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#c0e8ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "outline": "#737686",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#6b6e70",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#0053db",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d5e3fc",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed": "#dbe1ff",
+                        "on-tertiary-container": "#eff1f3",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "secondary": "#006686",
+                        "primary-container": "#2563eb",
+                        "secondary-fixed-dim": "#7bd1fa",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-background": "#0d1c2e",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#001e2b",
+                        "primary": "#004ac6",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "inverse-surface": "#233144",
+                        "on-surface-variant": "#434655",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#ccdbf3",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#191c1e",
+                        "surface-variant": "#d5e3fc",
+                        "background": "#f8f9ff",
+                        "on-primary-fixed": "#00174b",
+                        "surface-container": "#e6eeff",
+                        "on-surface": "#0d1c2e",
+                        "secondary-container": "#7ed4fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "container-max": "1200px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "base": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "gutter": "20px",
+                        "xl": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "headline-sm": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "label-md": ["Work Sans"],
+                        "body-sm": ["Work Sans"],
+                        "body-md": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "body-lg": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Ambient Shadows Setup */
+        .shadow-level-1 { box-shadow: 0 2px 4px rgba(37, 99, 235, 0.04); }
+        .shadow-level-2 { box-shadow: 0 6px 12px rgba(37, 99, 235, 0.08); }
+        .inner-stroke { box-shadow: inset 0 0 0 1px rgba(115, 118, 134, 0.1); }
+        
+        /* Hide scrollbar for clean horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        body { @apply bg-background text-on-background antialiased; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="pb-24 md:pb-0">
+<!-- TopAppBar (Web & Mobile) -->
+<header class="w-full top-0 sticky z-50 bg-surface dark:bg-on-background shadow-sm">
+<div class="flex items-center justify-between px-margin-mobile h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-sm">
+<!-- Leading Avatar -->
+<button class="active:scale-95 transition-transform rounded-full overflow-hidden w-8 h-8 focus:outline-none focus:ring-2 focus:ring-primary">
+<img alt="User Profile" class="object-cover w-full h-full" data-alt="A close-up portrait of a friendly homeowner with a warm smile, well-lit with soft natural light, conveying a sense of calm and responsibility, fitting for a modern functionalist home management application interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO2UvjToDyqlmi2BuApZXsn_YxK0c_ndak2zqy2_2ORzRwnkdS-aEnofpIQNWPeHpWTnVSt_9kfwoJIR53UmO_O5lUG5LlXMsKwEBvImkgUqCHfAPwe_cs3MLOwzUqYRJkvbIC36DEpAK58Yfg7U0DAPi6p_JwnhjZkMevGfYZQDWP6tQxOkqc__p0ZiP-tC9PPk3VCWS_ctHnmHAl8rv2iHDDiK4oendru1DrDZwtsaOLG_yv5tR-ow"/>
+</button>
+</div>
+<!-- Headline / Brand -->
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">
+                Home Harmony
+            </div>
+<div class="flex items-center gap-sm">
+<!-- Trailing Icon -->
+<button class="text-primary dark:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors rounded-full p-2 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</div>
+</div>
+<!-- Desktop Nav Cluster (Hidden on Mobile) -->
+<nav class="hidden md:flex justify-center w-full bg-surface border-t border-outline-variant/10 shadow-[0_2px_10px_rgba(37,99,235,0.02)] pt-2 pb-2">
+<div class="flex space-x-lg px-margin-mobile max-w-container-max w-full justify-center">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all px-4 py-2 rounded-full hover:bg-surface-container-low font-label-md text-label-md">
+<span class="material-symbols-outlined">dashboard</span>
+                     Dashboard
+                 </button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all px-4 py-2 rounded-full hover:bg-surface-container-low font-label-md text-label-md">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+                     Utilities
+                 </button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all px-4 py-2 rounded-full hover:bg-surface-container-low font-label-md text-label-md">
+<span class="material-symbols-outlined">checklist</span>
+                     Chores
+                 </button>
+<!-- Active Tab -->
+<button class="flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-2 rounded-full font-label-md text-label-md shadow-level-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home_repair_service</span>
+                     Maintenance
+                 </button>
+</div>
+</nav>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-container-max mx-auto px-margin-mobile py-lg grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Header Section -->
+<div class="col-span-1 md:col-span-12 mb-sm">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-xs">Maintenance Hub</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Keep your home running smoothly with scheduled tasks and service records.</p>
+</div>
+<!-- Left Column: Alerts & Schedules (Bento style) -->
+<div class="col-span-1 md:col-span-8 flex flex-col gap-lg">
+<!-- Upcoming Service Alert (High Priority) -->
+<section class="bg-error-container/20 rounded-xl p-md flex flex-col sm:flex-row items-start sm:items-center gap-md inner-stroke shadow-level-1 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-error-container/50 rounded-full blur-2xl pointer-events-none"></div>
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-error-container">warning</span>
+</div>
+<div class="flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">HVAC Seasonal Tune-up Overdue</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Scheduled for Oct 15th. Regular maintenance prevents winter breakdowns.</p>
+</div>
+<button class="bg-error text-on-error px-md py-sm rounded-md font-label-md text-label-md hover:bg-on-error-container transition-colors shadow-level-1 active:scale-95 shrink-0 whitespace-nowrap">
+                    Schedule Now
+                </button>
+</section>
+<!-- Scheduled Maintenance (Bento Grid layout) -->
+<section>
+<div class="flex justify-between items-end mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Scheduled Maintenance</h2>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<!-- Task Card 1 -->
+<div class="bg-surface-bright rounded-xl p-md inner-stroke shadow-level-1 hover:shadow-level-2 transition-shadow group flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">air</span>
+</div>
+<span class="bg-secondary-container/50 text-on-secondary-container px-2 py-1 rounded-full font-label-sm text-label-sm">In 3 Days</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Change Air Filter</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md flex-1">HVAC System • 20x25x1 MERV 11</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mr-md overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+<button aria-label="Mark completed" class="text-primary font-label-md text-label-md group-hover:bg-primary-container/10 p-2 rounded-full transition-colors active:scale-95 shrink-0">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+</div>
+</div>
+<!-- Task Card 2 -->
+<div class="bg-surface-bright rounded-xl p-md inner-stroke shadow-level-1 hover:shadow-level-2 transition-shadow group flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">water_drop</span>
+</div>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-1 rounded-full font-label-sm text-label-sm">Next Week</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Flush Water Heater</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md flex-1">Basement Utility Room • Annual</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mr-md overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 60%"></div>
+</div>
+<button aria-label="Mark completed" class="text-primary font-label-md text-label-md group-hover:bg-primary-container/10 p-2 rounded-full transition-colors active:scale-95 shrink-0">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Service History Log (List format) -->
+<section class="bg-surface-bright rounded-xl inner-stroke shadow-level-1 overflow-hidden">
+<div class="p-md border-b border-outline-variant/20 flex justify-between items-center">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Service History</h2>
+<button class="flex items-center gap-xs text-primary font-label-md text-label-md hover:bg-primary-container/10 px-2 py-1 rounded-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span> Log Service
+                    </button>
+</div>
+<div class="flex flex-col">
+<!-- Log Item 1 -->
+<div class="p-md border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors flex items-start gap-md cursor-pointer">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined">plumbing</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-label-md text-label-md text-on-surface truncate">Garbage Disposal Replacement</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0 ml-2">Sep 12, 2023</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Elite Plumbing Services • $350.00</p>
+<p class="font-body-sm text-body-sm text-outline mt-1 text-xs truncate">Installed Insinkerator Badger 5. 1 yr warranty on labor.</p>
+</div>
+</div>
+<!-- Log Item 2 -->
+<div class="p-md border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors flex items-start gap-md cursor-pointer">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined">pest_control</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-label-md text-label-md text-on-surface truncate">Quarterly Pest Treatment</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0 ml-2">Aug 05, 2023</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Terminix • $125.00</p>
+</div>
+</div>
+<!-- Log Item 3 -->
+<div class="p-md hover:bg-surface-container-low transition-colors flex items-start gap-md cursor-pointer">
+<div class="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined">roofing</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-label-md text-label-md text-on-surface truncate">Gutter Cleaning</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0 ml-2">May 20, 2023</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">DIY • $0.00</p>
+<p class="font-body-sm text-body-sm text-outline mt-1 text-xs truncate">Cleared front and back. Needs minor patch on back corner.</p>
+</div>
+</div>
+</div>
+<div class="p-2 border-t border-outline-variant/10 bg-surface-container-lowest text-center">
+<button class="text-primary font-label-md text-label-md py-2 w-full hover:bg-surface-container-low rounded-md transition-colors">Load More History</button>
+</div>
+</section>
+</div>
+<!-- Right Column: Document Vault -->
+<div class="col-span-1 md:col-span-4 flex flex-col gap-lg">
+<section class="bg-surface-bright rounded-xl p-md inner-stroke shadow-level-1 h-full flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Document Vault</h2>
+<button aria-label="Upload Document" class="bg-primary-container text-on-primary w-8 h-8 rounded-full flex items-center justify-center hover:bg-primary transition-colors shadow-level-1 active:scale-95">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Store manuals, warranties, and receipts for easy reference.</p>
+<!-- Folders/Categories -->
+<div class="grid grid-cols-2 gap-sm mb-md">
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors group">
+<span class="material-symbols-outlined text-secondary mb-1 group-hover:scale-110 transition-transform">kitchen</span>
+<span class="font-label-sm text-label-sm text-on-surface">Appliances</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors group">
+<span class="material-symbols-outlined text-secondary mb-1 group-hover:scale-110 transition-transform">hvac</span>
+<span class="font-label-sm text-label-sm text-on-surface">Systems</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors group">
+<span class="material-symbols-outlined text-secondary mb-1 group-hover:scale-110 transition-transform">receipt_long</span>
+<span class="font-label-sm text-label-sm text-on-surface">Receipts</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors group">
+<span class="material-symbols-outlined text-secondary mb-1 group-hover:scale-110 transition-transform">description</span>
+<span class="font-label-sm text-label-sm text-on-surface">Warranties</span>
+</div>
+</div>
+<!-- Recent Documents -->
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-sm mt-auto">Recently Added</h3>
+<ul class="flex flex-col gap-xs">
+<li class="flex items-center p-2 rounded-md hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded bg-error-container/20 flex items-center justify-center mr-3 shrink-0">
+<span class="material-symbols-outlined text-error text-[16px]">picture_as_pdf</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface truncate group-hover:text-primary transition-colors">Samsung_Refrigerator_Manual.pdf</p>
+<p class="font-label-sm text-label-sm text-outline">2.4 MB</p>
+</div>
+</li>
+<li class="flex items-center p-2 rounded-md hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded bg-primary-container/10 flex items-center justify-center mr-3 shrink-0">
+<span class="material-symbols-outlined text-primary text-[16px]">image</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface truncate group-hover:text-primary transition-colors">Plumbing_Receipt_Sep2023.jpg</p>
+<p class="font-label-sm text-label-sm text-outline">850 KB</p>
+</div>
+</li>
+</ul>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container dark:bg-inverse-surface shadow-[0_-2px_10px_rgba(37,99,235,0.06)] border-t border-outline-variant/10">
+<div class="flex justify-around items-center py-2 px-2">
+<!-- Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-sm text-label-sm mt-1">Dashboard</span>
+</button>
+<!-- Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-sm text-label-sm mt-1">Utilities</span>
+</button>
+<!-- Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">checklist</span>
+<span class="font-label-sm text-label-sm mt-1">Chores</span>
+</button>
+<!-- Active: Maintenance -->
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home_repair_service</span>
+<span class="font-label-sm text-label-sm mt-1">Maintenance</span>
+</button>
+</div>
+</nav>
+</body></html>

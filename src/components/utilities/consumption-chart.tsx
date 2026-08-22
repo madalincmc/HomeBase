@@ -27,9 +27,12 @@ function formatMonthLabel(month: string): string {
 // in the chart itself, not just a caveat in the surrounding text.
 function GapAwareBar(props: React.ComponentProps<typeof Rectangle> & { payload?: { gap?: boolean } }) {
   const { payload, ...rest } = props;
-  // chart-3 (solid) vs chart-1 (washed out) — the Nova theme's chart
-  // palette runs light-to-dark, so the *lightest* tone reads as "faded/
-  // de-emphasized" for a gap, not the darkest.
+  // chart-3 (solid) vs chart-1 (washed out) — the chart palette runs
+  // light-to-dark by index, so the *lightest* tone reads as "faded/
+  // de-emphasized" for a gap, not the darkest. That ordering is the
+  // contract, not the specific theme: it held for the original Nova
+  // neutrals and is preserved by the Serene Home blue ramp that replaced
+  // them (see the chart-token comment in globals.css).
   return <Rectangle {...rest} fill={payload?.gap ? "var(--color-chart-1)" : "var(--color-chart-3)"} />;
 }
 

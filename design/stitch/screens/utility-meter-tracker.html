@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Utility &amp; Meter Readings - Home Harmony</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-on-surface": "#eaf1ff",
+                      "tertiary": "#525657",
+                      "on-primary-container": "#eeefff",
+                      "surface-bright": "#f8f9ff",
+                      "inverse-primary": "#b4c5ff",
+                      "on-secondary-container": "#005b78",
+                      "on-secondary-fixed-variant": "#004d66",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed": "#c0e8ff",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "outline": "#737686",
+                      "surface-container-high": "#dce9ff",
+                      "tertiary-container": "#6b6e70",
+                      "on-error": "#ffffff",
+                      "surface-tint": "#0053db",
+                      "error-container": "#ffdad6",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d5e3fc",
+                      "on-tertiary": "#ffffff",
+                      "surface": "#f8f9ff",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "outline-variant": "#c3c6d7",
+                      "primary-fixed": "#dbe1ff",
+                      "on-tertiary-container": "#eff1f3",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "secondary": "#006686",
+                      "primary-container": "#2563eb",
+                      "secondary-fixed-dim": "#7bd1fa",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#e0e3e5",
+                      "on-background": "#0d1c2e",
+                      "surface-container-low": "#eff4ff",
+                      "on-secondary-fixed": "#001e2b",
+                      "primary": "#004ac6",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "inverse-surface": "#233144",
+                      "on-surface-variant": "#434655",
+                      "error": "#ba1a1a",
+                      "surface-dim": "#ccdbf3",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-fixed": "#191c1e",
+                      "surface-variant": "#d5e3fc",
+                      "background": "#f8f9ff",
+                      "on-primary-fixed": "#00174b",
+                      "surface-container": "#e6eeff",
+                      "on-surface": "#0d1c2e",
+                      "secondary-container": "#7ed4fd"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "container-max": "1200px",
+                      "margin-mobile": "16px",
+                      "sm": "8px",
+                      "base": "4px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "gutter": "20px",
+                      "xl": "40px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Manrope"
+                      ],
+                      "headline-lg-mobile": [
+                              "Manrope"
+                      ],
+                      "headline-sm": [
+                              "Manrope"
+                      ],
+                      "headline-md": [
+                              "Manrope"
+                      ],
+                      "label-md": [
+                              "Work Sans"
+                      ],
+                      "body-sm": [
+                              "Work Sans"
+                      ],
+                      "body-md": [
+                              "Work Sans"
+                      ],
+                      "label-sm": [
+                              "Work Sans"
+                      ],
+                      "body-lg": [
+                              "Work Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "26px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "14px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body { background-color: #f8f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface shadow-sm transition-transform active:scale-95">
+<div class="flex items-center justify-between px-margin-mobile h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small, circular profile picture of a person smiling in a brightly lit, modern home setting, serving as an avatar for a domestic management app. High quality, friendly mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjAKX2KWz1_GwpF-K_rG2qR0OfDAhVuGtOWsLvRjleDXZapUe5nZ28sixkM9VxUFUZqUbIoYpGOMooTuVBTSB3yKvaj222yAHWGUZT7jmebf6L9yDPk6kT3OVqjJ_LVbjpp0DBV9O4U4ScXC6bfup3pszW60Z8uvukqbT1stbXRO8rs85EeKN5fpEpx_25dWpYFkH4XHWMLGy_wPuyQLsaOW-dfczp6UrmYTAYw5t4QM26B55T85G4Gg"/>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Home Harmony</h1>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard
+                </a>
+<a class="text-primary font-label-md text-label-md flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span> Utilities
+                </a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">checklist</span> Chores
+                </a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">home_repair_service</span> Maintenance
+                </a>
+</nav>
+<button class="text-primary hover:bg-surface-container-low transition-colors p-sm rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="w-full max-w-container-max mx-auto px-margin-mobile py-lg grid grid-cols-1 md:grid-cols-12 gap-lg md:gap-xl">
+<!-- Action Header -->
+<div class="col-span-1 md:col-span-12 flex flex-col md:flex-row justify-between items-start md:items-center mb-md">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background mb-xs">Utilities &amp; Meter Readings</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Track your consumption and log new readings.</p>
+</div>
+<button class="mt-md md:mt-0 bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md px-lg py-sm rounded-md shadow-sm flex items-center gap-sm transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span> Log New Reading
+            </button>
+</div>
+<!-- Bento Grid: Utility Cards -->
+<div class="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Electricity Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/20 hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="bg-secondary-container text-on-secondary-container p-sm rounded-lg">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-background">Electricity</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Active</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Next Bill: Oct 15</span>
+</div>
+<div class="mb-md">
+<p class="font-headline-md text-headline-md text-primary mb-xs">452 kWh</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last reading: Sep 28</p>
+</div>
+<!-- Small Trend Graph (Placeholder CSS Gradient) -->
+<div class="h-16 w-full rounded-md bg-gradient-to-r from-surface-container to-surface-variant relative overflow-hidden">
+<svg class="absolute bottom-0 w-full h-full text-secondary opacity-20" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0 100 L0 50 Q25 20, 50 60 T100 30 L100 100 Z" fill="currentColor"></path>
+</svg>
+</div>
+</div>
+<!-- Gas Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/20 hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="bg-error-container text-on-error-container p-sm rounded-lg">
+<span class="material-symbols-outlined">local_fire_department</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-background">Gas</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Active</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Next Bill: Oct 20</span>
+</div>
+<div class="mb-md">
+<p class="font-headline-md text-headline-md text-primary mb-xs">28 CCF</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last reading: Sep 28</p>
+</div>
+<div class="h-16 w-full rounded-md bg-gradient-to-r from-surface-container to-surface-variant relative overflow-hidden">
+<svg class="absolute bottom-0 w-full h-full text-error opacity-20" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0 100 L0 80 Q25 40, 50 70 T100 50 L100 100 Z" fill="currentColor"></path>
+</svg>
+</div>
+</div>
+<!-- Water Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/20 hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="bg-primary-fixed text-on-primary-fixed p-sm rounded-lg">
+<span class="material-symbols-outlined">water_drop</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-background">Water</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Active</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Next Bill: Nov 01</span>
+</div>
+<div class="mb-md">
+<p class="font-headline-md text-headline-md text-primary mb-xs">1,200 Gal</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last reading: Sep 20</p>
+</div>
+<div class="h-16 w-full rounded-md bg-gradient-to-r from-surface-container to-surface-variant relative overflow-hidden">
+<svg class="absolute bottom-0 w-full h-full text-primary opacity-20" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0 100 L0 30 Q25 60, 50 40 T100 70 L100 100 Z" fill="currentColor"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Reading History Section -->
+<div class="col-span-1 md:col-span-12 mt-lg bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+<div class="p-md border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+<h3 class="font-headline-sm text-headline-sm text-on-background">Reading History</h3>
+<!-- Search Input -->
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface rounded-md border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary font-body-sm text-body-sm text-on-background placeholder-on-surface-variant transition-colors outline-none" placeholder="Search entries..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant">
+<th class="py-sm px-md font-medium border-b border-outline-variant/20">Date</th>
+<th class="py-sm px-md font-medium border-b border-outline-variant/20">Utility</th>
+<th class="py-sm px-md font-medium border-b border-outline-variant/20">Reading</th>
+<th class="py-sm px-md font-medium border-b border-outline-variant/20 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-background divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-lowest transition-colors group min-h-[48px]">
+<td class="py-sm px-md">Sep 28, 2023</td>
+<td class="py-sm px-md flex items-center gap-xs"><span class="material-symbols-outlined text-[16px] text-secondary">bolt</span> Electricity</td>
+<td class="py-sm px-md font-medium">452 kWh</td>
+<td class="py-sm px-md text-right">
+<button class="text-on-surface-variant hover:text-primary p-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group min-h-[48px]">
+<td class="py-sm px-md">Sep 28, 2023</td>
+<td class="py-sm px-md flex items-center gap-xs"><span class="material-symbols-outlined text-[16px] text-error">local_fire_department</span> Gas</td>
+<td class="py-sm px-md font-medium">28 CCF</td>
+<td class="py-sm px-md text-right">
+<button class="text-on-surface-variant hover:text-primary p-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group min-h-[48px]">
+<td class="py-sm px-md">Sep 20, 2023</td>
+<td class="py-sm px-md flex items-center gap-xs"><span class="material-symbols-outlined text-[16px] text-primary">water_drop</span> Water</td>
+<td class="py-sm px-md font-medium">1,200 Gal</td>
+<td class="py-sm px-md text-right">
+<button class="text-on-surface-variant hover:text-primary p-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-sm text-center border-t border-outline-variant/20">
+<button class="font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors">View All History</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center py-2 px-2 bg-surface-container border-t border-outline-variant/10 z-50 rounded-t-xl shadow-lg transition-transform active:scale-90 duration-200">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">dashboard</span>
+<span class="font-label-sm text-label-sm mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-sm text-label-sm mt-1 font-medium">Utilities</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">checklist</span>
+<span class="font-label-sm text-label-sm mt-1">Chores</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">home_repair_service</span>
+<span class="font-label-sm text-label-sm mt-1">Maintenance</span>
+</a>
+</nav>
+</body></html>
