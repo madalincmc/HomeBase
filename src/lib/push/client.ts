@@ -4,13 +4,37 @@ export type PushSupport =
   | { supported: true }
   | { supported: false; reason: string };
 
+function isIos(): boolean {
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return true;
+  // iPadOS 13+ reports itself as a Mac; the touch-point count is what
+  // actually distinguishes it from a real desktop Safari.
+  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+}
+
+function isStandalone(): boolean {
+  if (window.matchMedia("(display-mode: standalone)").matches) return true;
+  // Non-standard and iOS-only, but it is the reliable signal there.
+  return Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+}
+
 export function checkPushSupport(): PushSupport {
   if (typeof window === "undefined") return { supported: false, reason: "Not in a browser." };
   if (!("serviceWorker" in navigator)) return { supported: false, reason: "Service workers aren't available." };
-  if (!("PushManager" in window)) return { supported: false, reason: "Push isn't available." };
+
+  // Checked *before* the generic PushManager/Notification probes, which used
+  // to shadow it: on iOS both APIs are simply absent in an ordinary Safari
+  // tab, so the honest-but-useless "Push isn't available" won the race and
+  // hid the one message that actually tells you what to do about it.
+  if (isIos() && !isStandalone()) {
+    return {
+      supported: false,
+      reason:
+        'On iPhone, open HomeBase from the Home Screen to enable reminders — tap Share, then "Add to Home Screen".',
+    };
+  }
+
+  if (!("PushManager" in window)) return { supported: false, reason: "Push isn't available in this browser." };
   if (!("Notification" in window)) {
-    // The usual cause on iOS: opened in a normal Safari tab rather than from
-    // the Home Screen, where Apple doesn't expose the Notification API.
     return { supported: false, reason: "Add HomeBase to your Home Screen to enable reminders." };
   }
   return { supported: true };
