@@ -32,8 +32,11 @@ export const meterPoints = pgTable("meter_points", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// One row per manual reading. Append-only history — consumption between
-// readings is calculated at query time, not stored.
+// One row per manual reading. Append-only in normal use — consumption
+// between readings is calculated at query time, not stored. Past rows can
+// still be edited or deleted as a correction path (a mis-typed or
+// mis-scanned value), which recomputes consumption rather than layering a
+// superseding row on top of the wrong one.
 export const meterReadings = pgTable("meter_readings", {
   id: uuid("id").primaryKey().defaultRandom(),
   utilityId: uuid("utility_id")

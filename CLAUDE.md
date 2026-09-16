@@ -1158,6 +1158,51 @@ computed correctly against only its own history (not the others') — then confi
 point unassigned its readings (`meter_point_id` → `null`) rather than deleting them, and confirmed
 the FAB's water-reading flow shows the same per-point fields as the full page.
 
+### Editing and deleting past readings
+
+A household need, not a Linear ticket: a value typed or scanned wrong is often only noticed a
+reading or two later, and before this the history table was genuinely append-only with no way
+back. `updateMeterReading` / `deleteMeterReading` (`src/lib/utilities/actions.ts`) are the
+correction path, reached from a `⋯` overflow menu on each history row (`ReadingRowActions`) —
+the same demote-the-rare-actions shape `ChoreCard` established, rather than two more buttons
+competing with the row's data.
+
+**A correction mutates the row in place; it never writes a superseding one.** Consumption is the
+delta between consecutive readings, so leaving the wrong row behind would keep skewing the chart
+and the monthly buckets forever — the opposite of how bills' payment history works, where each
+period genuinely is its own row. This is why the `meter_readings` schema comment now says
+"append-only *in normal use*" rather than flatly append-only.
+
+**Both actions address a reading by its own id, so ownership has to be proved by joining back up**
+— `requireOwnedReading()` joins `meter_readings → utilities` and filters on the household, since
+unlike every other action in this file there's no `utilityId` argument to check directly.
+
+**`resolveMeterPointId()` is shared with `addMeterReading`**, which previously inlined the same
+lookup. It also accepts `"none"` as "unassign", because the edit form's `<Select>` can't submit an
+empty value the way an omitted field can — and reassigning a reading's meter point is a real case
+(a multi-point water reading filed under the wrong tap). `annotateReadingsWithConsumption` regroups
+on read, so the deltas on *both* sides of the move recompute for free.
+
+**Delete `deleteFile()`s the reading's attachments before the DB delete** — the FK cascade only
+removes the `attachments` row, which is exactly the Blob leak MAD-96 found in
+`deleteMaintenanceItem`. Applied here from the start rather than found later; `deleteMeterReading`
+is now the third delete path with this fix, so treat it as the default for any future delete
+touching an entity with attachments.
+
+**The `activities` row logged when a reading was added is deliberately left behind on delete** —
+same rule CLAUDE.md already states for the unenforced `relatedEntity` pointer pattern: a log entry
+shouldn't vanish because its source row was removed. Nothing is logged for the edit or the delete
+themselves; `activity_type` has no value for either, and MAD-99's precedent (skips aren't logged
+because no enum value exists) says that's scope, not a gap.
+
+Verified against the household's real water utility: corrected a reading's value and confirmed
+consumption recomputed against only that meter point's own history (172 − 165 = 7, ignoring the
+intervening Baia Mica/Baia Mare rows), reassigned it to Unassigned and confirmed the delta
+regrouped correctly (165 − 25 = 140 against the other unassigned reading), then restored it
+exactly. Delete was verified on a disposable gas reading carrying a real uploaded photo — the row
+disappeared, and `curl` on the Blob URL went 200 → 404, confirming the file itself was removed and
+not just its row.
+
 ## Google Stitch (design source)
 
 The household's UI designs live in a Google Stitch project, **"Home Management Hub"**
@@ -1210,6 +1255,12 @@ The *Serene Home* **theme has been adopted** (see below); the screens themselves
 deliberately not implemented as routes.
 
 ## Serene Home theme
+
+**`design/design.md` is the design-system reference** — the full palette, type scale, spacing,
+elevation and component intent, in Stitch's own `design.md` format (so it round-trips through
+`upload_design_md`), plus the shadcn mapping table and an explicit list of what the app does
+*not* implement yet. Read it before making visual decisions; the summary below is just the
+"why" behind the non-obvious choices.
 
 Swapped `src/app/globals.css` from Nova's neutral `oklch(L 0 0)` tokens to Serene Home's blue
 palette, plus its shape and type scale. **No component was restyled** — this is a token swap, so
