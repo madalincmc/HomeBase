@@ -3,7 +3,8 @@
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { utilities, schedules, meterReadings, meterPoints, activities } from "@/db/schema";
+import { utilities, schedules, meterReadings, meterPoints, activities, attachments } from "@/db/schema";
+import { deleteFile } from "@/lib/attachments/blob";
 import { getOrCreateHousehold } from "@/lib/household";
 import { isValidDateOnly } from "@/lib/schedule";
 
@@ -62,6 +63,36 @@ function parseScheduleFields(
   }
   const anchorDate = readRequiredDate(formData, "scheduleAnchorDate", "A start date");
   return { frequency: frequency as (typeof READING_SCHEDULE_FREQUENCIES)[number], anchorDate };
+}
+
+// Every reading-level action has to prove the reading belongs to this
+// household — readings are addressed by their own id, so the utility (and
+// through it, the household) can only be reached by joining back up.
+async function requireOwnedReading(readingId: string) {
+  const household = await getOrCreateHousehold();
+  const [row] = await db
+    .select({ reading: meterReadings, utility: utilities })
+    .from(meterReadings)
+    .innerJoin(utilities, eq(meterReadings.utilityId, utilities.id))
+    .where(and(eq(meterReadings.id, readingId), eq(utilities.householdId, household.id)));
+  if (!row) throw new Error("Reading not found.");
+  return row;
+}
+
+// Present only for a water-style utility with named meter points (see the
+// schema comment on meterReadings.meterPointId) — every other utility just
+// omits this field and behaves exactly as before. "none" is how the edit
+// form clears an assignment, which a plain empty value can't express
+// through a <Select>.
+async function resolveMeterPointId(formData: FormData, utilityId: string): Promise<string | null> {
+  const raw = readOptionalString(formData, "meterPointId");
+  if (!raw || raw === "none") return null;
+  const [point] = await db
+    .select()
+    .from(meterPoints)
+    .where(and(eq(meterPoints.id, raw), eq(meterPoints.utilityId, utilityId)));
+  if (!point) throw new Error("Meter point not found.");
+  return point.id;
 }
 
 export async function createUtility(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -171,18 +202,11 @@ export async function addMeterReading(
     const readingDate = readRequiredDate(formData, "readingDate", "Reading date");
     const notes = readOptionalString(formData, "notes");
 
-    // Present only for a water-style utility with named meter points (see
-    // the schema comment on meterReadings.meterPointId) — every other
-    // utility just omits this field and behaves exactly as before.
-    const meterPointId = readOptionalString(formData, "meterPointId");
+    const meterPointId = await resolveMeterPointId(formData, utilityId);
     let pointName: string | null = null;
     if (meterPointId) {
-      const [point] = await db
-        .select()
-        .from(meterPoints)
-        .where(and(eq(meterPoints.id, meterPointId), eq(meterPoints.utilityId, utilityId)));
-      if (!point) throw new Error("Meter point not found.");
-      pointName = point.name;
+      const [point] = await db.select().from(meterPoints).where(eq(meterPoints.id, meterPointId));
+      pointName = point?.name ?? null;
     }
 
     const [reading] = await db
@@ -201,6 +225,69 @@ export async function addMeterReading(
     revalidatePath("/utilities");
     revalidatePath("/");
     return { success: true, readingId: reading.id };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Something went wrong." };
+  }
+}
+
+// Readings are still append-only in normal use — this is the correction
+// path, for a value typed (or scanned) wrong and only noticed later. It
+// deliberately mutates the row in place rather than writing a superseding
+// one: consumption is the delta between consecutive readings, so a
+// correction that left the wrong row behind would keep skewing the chart.
+export async function updateMeterReading(
+  readingId: string,
+  _prevState: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const { reading, utility } = await requireOwnedReading(readingId);
+
+    const valueRaw = readRequiredString(formData, "value", "Reading value");
+    if (Number.isNaN(Number(valueRaw))) {
+      throw new Error("Reading value must be a number.");
+    }
+    const readingDate = readRequiredDate(formData, "readingDate", "Reading date");
+    const notes = readOptionalString(formData, "notes");
+    const meterPointId = await resolveMeterPointId(formData, utility.id);
+
+    await db
+      .update(meterReadings)
+      .set({ value: valueRaw, readingDate, notes, meterPointId, updatedAt: new Date() })
+      .where(eq(meterReadings.id, reading.id));
+
+    revalidatePath(`/utilities/${utility.id}`);
+    revalidatePath("/utilities");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Something went wrong." };
+  }
+}
+
+export async function deleteMeterReading(readingId: string): Promise<ActionResult> {
+  try {
+    const { reading, utility } = await requireOwnedReading(readingId);
+
+    // attachments cascade-delete via their FK, but that only removes the DB
+    // row — the Blob file behind it would leak forever, since nothing else
+    // ever calls del() on it. Same fix deleteMaintenanceItem needed (MAD-96).
+    const readingAttachments = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.meterReadingId, reading.id));
+    await Promise.all(readingAttachments.map((a) => deleteFile(a.url)));
+
+    await db.delete(meterReadings).where(eq(meterReadings.id, reading.id));
+
+    // The activities row logged when this reading was added is deliberately
+    // left in place — a log entry shouldn't vanish because its source row
+    // was later removed (the same rule CLAUDE.md states for the unenforced
+    // relatedEntity pointer pattern).
+    revalidatePath(`/utilities/${utility.id}`);
+    revalidatePath("/utilities");
+    revalidatePath("/");
+    return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : "Something went wrong." };
   }

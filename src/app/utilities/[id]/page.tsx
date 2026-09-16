@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { EditUtilityDialog } from "@/components/utilities/edit-utility-dialog";
 import { AddReadingForm } from "@/components/utilities/add-reading-form";
 import { MeterPointsSection } from "@/components/utilities/meter-points-section";
+import { ReadingRowActions } from "@/components/utilities/reading-row-actions";
 import { UtilitySwitcher } from "@/components/utilities/utility-switcher";
 import { ConsumptionChart } from "@/components/utilities/consumption-chart";
 import { AttachmentList } from "@/components/attachments/attachment-list";
@@ -79,6 +80,9 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                     <th className="px-3 py-2 font-medium">Consumption</th>
                     <th className="px-3 py-2 font-medium">Notes</th>
                     <th className="px-3 py-2 font-medium">Photo</th>
+                    <th className="px-3 py-2 font-medium">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -103,6 +107,21 @@ export default async function UtilityDetailPage({ params }: { params: Promise<{ 
                         <AttachmentList
                           attachments={reading.attachments}
                           revalidatePaths={[`/utilities/${utility.id}`]}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <ReadingRowActions
+                          readingId={reading.id}
+                          unit={utility.unit}
+                          label={`${formatDateOnlyLabel(reading.readingDate)} — ${reading.value} ${utility.unit}`}
+                          hasAttachments={reading.attachments.length > 0}
+                          defaultValues={{
+                            value: reading.value,
+                            readingDate: reading.readingDate,
+                            notes: reading.notes,
+                            meterPointId: reading.meterPointId,
+                          }}
+                          meterPoints={meterPoints}
                         />
                       </td>
                     </tr>
